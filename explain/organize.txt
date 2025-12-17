@@ -1,0 +1,22 @@
+Lyria's "organizer" component.
+
+Usage: `lyria organize [target] [source] [--dry-run]`
+
+Iterates through every music file in [source] and reorganizes it in [target].
+The structure will look something like that:
+  Artist/Album/Disc-Track Title.Extension
+For example:
+  Ado/Kyougen/01-11 Usseewa.mp3
+
+Songs without the album tag, will be placed in:
+  Artist/Disc-Track Title.Extension
+
+Songs without disc or track number will be renamed to only contain the title:
+  Artist/Album/Title.Extension
+
+Songs without Artist tag will not be processed.
+
+Source folder will not be iterated recursively, even if [-r|--recursive] is specified.
+You shuold put all songs in root of the source directory.
+
+You can specify [--dry-run] to to only parse files without moving them.

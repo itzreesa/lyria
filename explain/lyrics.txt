@@ -1,0 +1,13 @@
+Lyria's "lyrics" component.
+
+Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run]`
+Alternative: `lyria` same as `lyria lyrics .`
+
+Scans selected [path], defaults to the current directory, for music files.
+If used [-r|--recursive], also scans sub-directories.
+
+Then fetches synced lyrics, and writes it to the same path as file, with .lrc extension
+If synced lyrics can't be found, lyria will try to write normal lyrics, 
+  and if those can't be found, it'll move on with a warning.
+
+You can specify [--dry-run] to to only parse files without fetching lyrics.
