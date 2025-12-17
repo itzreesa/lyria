@@ -26,6 +26,7 @@ If you just want to grab lyrics for every song in the current folder (non-recurs
 
 Scans selected `[path]`, defaults to the current directory, for music files.
 If used `[-r|--recursive]`, also scans sub-directories.
+If used `[--forget-not-found]`, for every song with no lyrics found, there will be an empty .lrc file written
 
 Fetches synced lyrics, and writes it to the same path as file, with .lrc extension  
 

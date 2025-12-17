@@ -1,6 +1,6 @@
 lyria's "lyrics" component.
 
-Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run]`
+Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run] [--forget-not-found]`
 Alternative: `lyria` same as `lyria lyrics .`
 
 Scans selected [path], defaults to the current directory, for music files.
@@ -11,3 +11,6 @@ If synced lyrics can't be found, lyria will try to write normal lyrics,
   and if those can't be found, it'll move on with a warning.
 
 You can specify [--dry-run] to to only parse files without fetching lyrics.
+
+If you specify [--forget-not-found], lyria will write an empty .lrc file,
+  for every file lyrics can't be found for

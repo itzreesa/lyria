@@ -37,6 +37,10 @@ class LyricFetcher():
 
   def _write_lyrics(self, file_name, data) -> int:
     lyrics = ""
+    if not data:
+      with open(f"{file_name}.lrc", 'w') as f:
+        f.write(lyrics)
+      return 13
     if data["instrumental"]:
       # write blank file so we don't call the api too many times
       with open(f"{file_name}.lrc", 'w') as f:
@@ -79,6 +83,8 @@ class LyricFetcher():
     lyrics = self._fetch_lyrics(artist, title)
     if not lyrics:
       self.count_warn += 1
+      if self.args.forget_not_found:
+        self._write_lyrics(file_name.stem, None)
       return 3
 
     ret = self._write_lyrics(file_name.stem, lyrics)
@@ -131,6 +137,8 @@ class LyricFetcher():
         print(" ~ skip/exists ~ ", os.path.abspath(file))
       elif ret == 12:
         print(" ~ skip/instrumental ~ ", os.path.abspath(file))
+      elif ret == 13:
+        print(" ~ skip/blank ~ ", os.path.abspath(file))
 
       else:
         print(" ~ fail ~ ", os.path.abspath(file))

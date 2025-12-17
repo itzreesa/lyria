@@ -57,11 +57,17 @@ parser.add_argument("--dry-run",
                     action="store_true",
                     default=False,
                     required=False)
+parser.add_argument("--forget-not-found",
+                    help="for lyrics, creates empty .lrc if can't find lyrics",
+                    action="store_true",
+                    default=False,
+                    required=False)
 parser.add_argument("-e", "--explain",
                     help="toggle explain selected component",
                     action="store_true",
                     default=False,
                     required=False)
+
 
 # about
 parser.add_argument("-v", "--verbose",
