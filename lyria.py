@@ -123,6 +123,7 @@ def update_lyria():
 if len(sys.argv) > 1:
   if sys.argv[1] == "$lyria_update_venv":
     install_requirements()
+    exit(0)
   elif sys.argv[1] == "update":
     update_lyria()
     install_requirements()
