@@ -68,6 +68,16 @@ parser.add_argument("-e", "--explain",
                     default=False,
                     required=False)
 
+parser.add_argument("--artist",
+                    help="override artist name",
+                    nargs="?",
+                    default=False,
+                    required=False)
+parser.add_argument("--album",
+                    help="override album name",
+                    nargs="?",
+                    default=False,
+                    required=False)
 
 # about
 parser.add_argument("-v", "--verbose",

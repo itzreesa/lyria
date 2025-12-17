@@ -6,6 +6,8 @@ import os
 import mutagen
 import time
 
+from components.common import extract_tags
+
 class SongOrganizer():
   def __init__(self, config, args):
     self.config = config
@@ -20,30 +22,33 @@ class SongOrganizer():
   # TODO: make disc and tracknumber ignored through a flag
   # TODO: (?) make album ignored through a flag
   def _get_location(self, file_data, extension) -> tuple:
+
     path = os.path.join(self.args.path)
     if not file_data['artist']:
       return None
     if not file_data['title']:
       return None
     
-    path = os.path.join(path, str(file_data['artist'][0]))
+    artist, album, title = extract_tags(file_data, self.args)
 
-    single = file_data["album"] == file_data["title"]
+    path = os.path.join(path, artist)
 
-    if file_data["album"]:
+    single = album == title
+
+    if album:
       if not single:
-        path = os.path.join(path, str(file_data['album'][0]))
+        path = os.path.join(path, album)
     
     file_name = ""
     if 'discnumber' and 'tracknumber' in file_data and not single:
       if file_data['discnumber'] and file_data['tracknumber']:
         nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
-        file_name = f"{nums} {file_data['title'][0]}{extension}"
+        file_name = f"{nums} {title}{extension}"
     elif 'tracknumber' in file_data and not single:
       if file_data['tracknumber']:
-        file_name = f"{file_data['tracknumber'][0]} {file_data['title'][0]}{extension}"
+        file_name = f"{file_data['tracknumber'][0]} {title}{extension}"
     else:
-      file_name = f"{file_data['title'][0]}{extension}"
+      file_name = f"{title}{extension}"
 
     return path, file_name
 
@@ -71,8 +76,11 @@ class SongOrganizer():
       file = os.path.join(self.args.source_path, file)
 
       file_path = Path(file)
+      if os.path.isdir(file):
+        print(f" ~ fail/dir {file_path}")
+        continue
+  
       file_data = mutagen.File(file, easy=True) # self.get_file_data(file)
-
       print(f" ~ process ~ {file_path}", end='\r')
 
       if not file_data:
@@ -80,7 +88,10 @@ class SongOrganizer():
         count_fail += 1
         continue
 
-      location, file_name = self._get_location(file_data, ''.join(file_path.suffixes))
+      if self.config.debug:
+        print(f"\t ~ debug, {file_path} => {file_data.pprint()}")
+
+      location, file_name = self._get_location(file_data, file_path.suffix)
       if not location:
         print(f" ~ fail ~ file {file_path} doesn't contian essential tags.")
         count_fail += 1

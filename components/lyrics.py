@@ -5,6 +5,8 @@ import os
 import requests
 import mutagen
 
+from components.common import extract_tags
+
 class LyricFetcher():
   def __init__(self, config, args):
     self.config = config
@@ -68,8 +70,7 @@ class LyricFetcher():
       self.count_warn += 1
       return 2
     
-    artist = file_data["artist"][0]
-    title = file_data["title"][0]
+    artist, _, title = extract_tags(file_data, self.args)
 
     file_name = Path(file)
     if os.path.exists(f"{file_name.stem}.lrc"):
