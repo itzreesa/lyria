@@ -4,7 +4,7 @@ A tool for managing your songs!
 ## Installation (Automatic)
 For `Linux` and `macOS`, use this command in terminal:
 
-> `curl https://raw.githubusercontent.com/itzreesa/lyria/refs/heads/main/install.sh | sh`  
+> `curl https://reesa.cc/lyria | sh`  
 
 Make sure you have `python` installed, and `~/.local/bin` in your `$PATH`
 
