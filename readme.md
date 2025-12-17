@@ -1,6 +1,6 @@
 # Lyria
 Tool for automatically grabbing lyrics for every song in folder  
-Using [lrclib.net](https://lrclib.net/docs)'s [api]
+Using [lrclib.net](https://lrclib.net)'s [api](https://lrclib.net/docs)
 
 ## Installation
 - Clone or Download this repository somewhere safe.
