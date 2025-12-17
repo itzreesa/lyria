@@ -1,0 +1,11 @@
+lyria's "cover" component.
+
+Usage: `lyria cover [target] [cover] [-r|--recursive] [--dry-run] [-f|--force]`
+
+Scans selected [path], defaults to the current directory, for music files.
+If used [-r|--recursive], also scans sub-directories.
+
+Sets a cover image from [cover] to every file.
+If there already is a cover, it will not replace it unless [-f|--force] is specified.
+
+You can specify [--dry-run] to to only parse files without fetching lyrics.
