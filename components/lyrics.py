@@ -25,6 +25,27 @@ class LyricFetcher():
       }
     )
 
+  def _ret_print(self, ret, file):
+    sys.stdout.write("\r\033[K")
+    match ret:
+      case 0:
+        print(" ~ success ~ ", os.path.abspath(file))
+
+      case 2:
+        print(" ~ fail/invalid ~ ", os.path.abspath(file))
+      case 3:
+        print(" ~ fail/fetch ~ ", os.path.abspath(file))
+
+      case 11:
+        print(" ~ skip/exists ~ ", os.path.abspath(file))
+      case 12:
+        print(" ~ skip/instrumental ~ ", os.path.abspath(file))
+      case 13:
+        print(" ~ skip/blank ~ ", os.path.abspath(file))
+
+      case _:
+        print(" ~ fail ~ ", os.path.abspath(file))
+
   def _fetch_lyrics(self, artist, title) -> dict:
     request_url = self.api_url.replace("$artist", artist)
     request_url = request_url.replace("$title", title)
@@ -126,25 +147,19 @@ class LyricFetcher():
       
       ret = self._process_file(file,)
       sys.stdout.write("\r\033[K")
-      if ret == 0:
-        print(" ~ success ~ ", os.path.abspath(file))
-
-      elif ret == 2:
-        print(" ~ fail/invalid ~ ", os.path.abspath(file))
-      elif ret == 3:
-        print(" ~ fail/fetch ~ ", os.path.abspath(file))
-
-      elif ret == 11:
-        print(" ~ skip/exists ~ ", os.path.abspath(file))
-      elif ret == 12:
-        print(" ~ skip/instrumental ~ ", os.path.abspath(file))
-      elif ret == 13:
-        print(" ~ skip/blank ~ ", os.path.abspath(file))
-
-      else:
-        print(" ~ fail ~ ", os.path.abspath(file))
+      self._ret_print(ret, file)
 
   def run(self,) -> int:
-    self._process_directory(self.args.path)
+    if os.path.isdir(self.args.path):
+      self._process_directory(self.args.path)
+    else:
+      file = self.args.path
+      path = os.path.dirname(os.path.realpath(file))
+      os.chdir(path)
+      file = os.path.basename(file)
+      print(f" ~ single file => {file} ", end='\r')
+      ret = self._process_file(file,)
+      self._ret_print(ret, file)
+
     print(f"[lyria] done :3 \n downloaded - {self.count_downloaded}\n exist - {self.count_exist}\n warns - {self.count_warn}")
     return 0
