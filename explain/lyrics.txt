@@ -1,6 +1,6 @@
 lyria's "lyrics" component.
 
-Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run] [--forget-not-found]`
+Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run] [--forget-not-found] [--artist=<artist>]`
 Alternative: `lyria` same as `lyria lyrics .`
 
 Scans selected [path], defaults to the current directory, for music files.
@@ -14,3 +14,5 @@ You can specify [--dry-run] to to only parse files without fetching lyrics.
 
 If you specify [--forget-not-found], lyria will write an empty .lrc file,
   for every file lyrics can't be found for
+
+You can also override `artist` tag with `--artist=<artist>`
