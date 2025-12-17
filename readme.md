@@ -1,4 +1,4 @@
-# Lyria
+# lyria
 A tool for managing your songs!
 
 ## Installation
@@ -9,7 +9,7 @@ A tool for managing your songs!
 - Link `lyria.py` to `~/.local/bin/lyria`
 
 ## Usage
-Lyria is split into components,  
+lyria is split into components,  
 use `lyria --help` to see built-in help  
 to see help for each component, run `lyria [component] -e` or `--explain`.
 

@@ -1,4 +1,4 @@
-Lyria's "organizer" component.
+lyria's "organizer" component.
 
 Usage: `lyria organize [target] [source] [--dry-run]`
 

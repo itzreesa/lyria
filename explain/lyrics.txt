@@ -1,4 +1,4 @@
-Lyria's "lyrics" component.
+lyria's "lyrics" component.
 
 Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run]`
 Alternative: `lyria` same as `lyria lyrics .`
