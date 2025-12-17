@@ -2,13 +2,14 @@
 
 from components.lyrics import LyricFetcher
 from components.organize import SongOrganizer
+from components.cover import CoverPainter
 
 from explain import LyriaExplain
 
 import argparse
 
 LYRIA_VERSION_MAJOR = 1
-LYRIA_VERSION_MINOR = 1
+LYRIA_VERSION_MINOR = 2
 LYRIA_VERSION_PATCH = 0
 
 LYRIA_VERSION_FRIENDLY = f"{LYRIA_VERSION_MAJOR}.{LYRIA_VERSION_MINOR}.{LYRIA_VERSION_PATCH}"
@@ -22,7 +23,7 @@ parser = argparse.ArgumentParser(
 # components
 parser.add_argument("component",
                     help="select component used",
-                    choices=["lyrics", "organize"],
+                    choices=["lyrics", "organize", "cover"],
                     default="lyrics",
                     const="lyrics",
                     nargs="?",
@@ -30,12 +31,12 @@ parser.add_argument("component",
 
 # positionals
 parser.add_argument("path",
-                    help="base path, used as target for lyrics, organizer",
+                    help="base path, used as target for components",
                     default=".", 
                     nargs="?",
                     type=str)
 parser.add_argument("source_path", # used for organizer
-                    help="source path, used as input for organizer mode",
+                    help="source path, used as input for certain components",
                     default=None, 
                     nargs="?",
                     type=str)
@@ -43,6 +44,11 @@ parser.add_argument("source_path", # used for organizer
 # toggles
 parser.add_argument("-r", "--recursive",
                     help="toggle recursive mode, doesn't work for organizer mode",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("-f", "--force",
+                    help="force operation on files",
                     action="store_true",
                     default=False,
                     required=False)
@@ -83,6 +89,7 @@ class Lyria():
     
   def _setup(self,):
     self.config.recursive = self.args.recursive
+    self.config.force = self.args.force
     self.config.dry_run = self.args.dry_run
     self.config.verbose = self.args.verbose
     self.config.debug = self.args.debug
@@ -103,9 +110,10 @@ class Lyria():
     match self.args.component:
       case "lyrics":
         component = LyricFetcher(self.config, self.args)
-
       case "organize":
         component = SongOrganizer(self.config, self.args)
+      case "cover":
+        component = CoverPainter(self.config, self.args)
       case _:
         parser.print_help()
         exit(1)
