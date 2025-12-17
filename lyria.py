@@ -1,131 +1,123 @@
 #!/usr/bin/env python3
-from pathlib import Path
-import sys
-import os
 
-import requests
-import mutagen
+from components.lyrics import LyricFetcher
+from components.organize import SongOrganizer
+
+from explain import LyriaExplain
+
 import argparse
 
+LYRIA_VERSION_MAJOR = 1
+LYRIA_VERSION_MINOR = 1
+LYRIA_VERSION_PATCH = 0
+
+LYRIA_VERSION_FRIENDLY = f"{LYRIA_VERSION_MAJOR}.{LYRIA_VERSION_MINOR}.{LYRIA_VERSION_PATCH}"
+
 parser = argparse.ArgumentParser(
-  prog="Lyria",
-  description="lyrics fetcher",
-  epilog="reesa <meow@reesa.cc> (github.com/itzreesa/lyria)"
+  prog="lyria",
+  description="your silly song manager",
+  epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (github.com/itzreesa/lyria)"
 )
 
-parser.add_argument("path",
+# components
+parser.add_argument("component",
+                    help="select component used",
+                    choices=["lyrics", "organize"],
+                    default="lyrics",
+                    const="lyrics",
                     nargs="?",
-                    default=".", 
                     type=str)
+
+# positionals
+parser.add_argument("path",
+                    help="base path, used as target for lyrics, organizer",
+                    default=".", 
+                    nargs="?",
+                    type=str)
+parser.add_argument("source_path", # used for organizer
+                    help="source path, used as input for organizer mode",
+                    default=None, 
+                    nargs="?",
+                    type=str)
+
+# toggles
+parser.add_argument("-e", "--explain",
+                    help="toggle explain selected component",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("-r", "--recursive",
+                    help="toggle recursive mode, doesn't work for organizer mode",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("--dry-run",
+                    help="toggle dry run, process files without doing anything",
+                    action="store_true",
+                    default=False,
+                    required=False)
+
+# about
 parser.add_argument("-v", "--verbose",
+                    help="toggle more verbose output, e.g. skipped, invalid entries",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("--debug",
+                    help="toggle debug mode",
                     action="store_true",
                     default=False,
                     required=False)
 
 class LyriaConfig():
-  headers = None
-  api_url = "https://lrclib.net/api/get?artist_name=$artist&track_name=$title"
+  dry_run = False
   verbose = False
-  search_dir = "."
+  debug = False
 
 class Lyria():
   def __init__(self, args):
     self.config = LyriaConfig()
     self.args = args
-    self.setup()
-
-  def setup(self,):
-    self.config.headers = requests.utils.default_headers()
-    self.config.headers.update(
-      {
-        'User-Agent': "lyria v1.0k (https://github.com/itzreesa/lyria)"
-      }
-    )
-
-    self.config.search_dir = str(self.args.path)
+    self._setup()
+    
+  def _setup(self,):
+    self.config.recursive = False
+    self.config.dry_run = self.args.dry_run
     self.config.verbose = self.args.verbose
+    self.config.debug = self.args.debug
 
-  def log(self, s):
-    if self.config.verbose:
-      print(s)
+  def start(self,):
+    if self.config.debug:
+      print(f"[debug] argparse: {self.args}")
 
-  def fetch_lyrics(self, artist, title) -> dict:
-    request_url = self.config.api_url.replace("$artist", artist)
-    request_url = request_url.replace("$title", title)
-    request_url = request_url.replace(" ", "+")
-  
-    response = requests.get(url=request_url, headers=self.config.headers)
-    if response.status_code == 404:
-      print(f"[error] 404 on {artist} - {title}")
-      return {}
-  
-    return response.json()
+    component = None
 
-  def write_lyrics(self, file_name, data) -> bool:
-    lyrics = ""
-    if data["syncedLyrics"]:
-      lyrics = data["syncedLyrics"]
-    elif data["plainLyrics"]:
-      lyrics = data["plainLyrics"]
-    else:
-      print(f"(?) No lyrics found for {file_name}")
-      return False
-  
-    with open(f"{file_name}.lrc", 'w') as f:
-      f.write(lyrics)
+    if self.args.explain:
+      component = LyriaExplain(self.args.component)
+      component.run()
+      exit(0)
 
-    return True
+    ret = 0
 
-  def process_files(self,) -> bool:
-    os.chdir(self.config.search_dir)
-    files = os.listdir()
+    match self.args.component:
+      case "lyrics":
+        component = LyricFetcher(self.config, self.args)
 
-    count_downloaded = 0
-    count_exist = 0
-    count_warn = 0
+      case "organize":
+        component = SongOrganizer(self.config, self.args)
+      case _:
+        parser.print_help()
+        exit(1)
+        
+    ret = component.run()
 
-    for file in files:
-      file_name = Path(file)
-    
-      if os.path.isdir(file):
-        self.log(f"[skip/dir] {file_name}/")
-        count_warn += 1
-        continue
-
-      file_data = mutagen.File(file, easy=True)
-      if not file_data:
-        self.log(f"[skip/invalid] {file_name}")
-        count_warn += 1
-        continue
-
-      artist = file_data["artist"][0]
-      title = file_data["title"][0]
-    
-      if os.path.exists(f"{file_name.stem}.lrc"):
-        print(f"[exist] {artist} - {title}")
-        count_exist += 1
-        continue
-    
-      lyrics = self.fetch_lyrics(artist, title)
-      if not lyrics:
-        self.log(f"[warn] failed to fetch lyrics for {artist} - {title}")
-        count_warn += 1
-        continue
-    
-      success = self.write_lyrics(file_name.stem, lyrics)
-      if not success:
-        self.log(f"[error] failed to write lyrics for {artist} - {title}")
-        return
+    if ret == -1:
+      parser.print_usage()
       
-      print(f"[ok] {artist} - {title}")
-      count_downloaded += 1
-
-    print(f"[lyria] done :3 \n downloaded - {count_downloaded}\n exist - {count_exist}\n warns - {count_warn}")
-
 def main():
   args = parser.parse_args()
   ly = Lyria(args)
-  ly.process_files()
+  ly.start()
 
 if __name__ == "__main__":
   main()
