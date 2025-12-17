@@ -28,16 +28,18 @@ class SongOrganizer():
     
     path = os.path.join(path, str(file_data['artist'][0]))
 
+    single = file_data["album"] == file_data["title"]
+
     if file_data["album"]:
-      if file_data["album"] != file_data["title"]:
+      if not single:
         path = os.path.join(path, str(file_data['album'][0]))
     
     file_name = ""
-    if 'discnumber' and 'tracknumber' in file_data:
+    if 'discnumber' and 'tracknumber' in file_data and not single:
       if file_data['discnumber'] and file_data['tracknumber']:
         nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
         file_name = f"{nums} {file_data['title'][0]}{extension}"
-    elif 'tracknumber' in file_data:
+    elif 'tracknumber' in file_data and not single:
       if file_data['tracknumber']:
         file_name = f"{file_data['tracknumber'][0]} {file_data['title'][0]}{extension}"
     else:
