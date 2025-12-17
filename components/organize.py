@@ -29,7 +29,8 @@ class SongOrganizer():
     path = os.path.join(path, str(file_data['artist'][0]))
 
     if file_data["album"]:
-      path = os.path.join(path, str(file_data['album'][0]))
+      if file_data["album"] != file_data["title"]:
+        path = os.path.join(path, str(file_data['album'][0]))
     
     file_name = ""
     if 'discnumber' and 'tracknumber' in file_data:
