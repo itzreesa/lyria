@@ -1,12 +1,25 @@
 # lyria
 A tool for managing your songs!
 
-## Installation
-- Install python (tested on 3.14)
+## Installation (Automatic)
+For `Linux` and `macOS`, use this command in terminal:
+
+> `curl https://raw.githubusercontent.com/itzreesa/lyria/refs/heads/main/install.sh | sh`  
+
+Make sure you have `python` installed, and `~/.local/bin` in your `$PATH`
+
+## Installation (Manual)
+- Install python3 (tested on 3.14)
 - Clone or Download this repository somewhere safe.
-- Download all the dependencies using `python -m pip install -r ./requirements.txt`
 - Create `~/.local/bin` and add it to your `PATH`
 - Link `lyria.py` to `~/.local/bin/lyria`
+
+## Updating
+Use this command to update automatically to the newest tag.
+
+> `lyria update` 
+
+If this doesn't work, repeat the steps from manual installation section.
 
 ## Usage
 lyria is split into components,  
