@@ -1,5 +1,5 @@
 # Lyria
-Tool for managing your songs!
+A tool for managing your songs!
 
 ## Installation
 - Install python (tested on 3.14)
