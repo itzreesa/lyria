@@ -32,11 +32,13 @@ class SongOrganizer():
       path = os.path.join(path, str(file_data['album'][0]))
     
     file_name = ""
-    if file_data['discnumber'] and file_data['tracknumber']:
-      nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
-      file_name = f"{nums} {file_data['title'][0]}{extension}"
-    elif file_data['tracknumber']:
-      file_name = f"{file_data['tracknumber'][0]} {file_data['title'][0]}{extension}"
+    if 'discnumber' and 'tracknumber' in file_data:
+      if file_data['discnumber'] and file_data['tracknumber']:
+        nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
+        file_name = f"{nums} {file_data['title'][0]}{extension}"
+    elif 'tracknumber' in file_data:
+      if file_data['tracknumber']:
+        file_name = f"{file_data['tracknumber'][0]} {file_data['title'][0]}{extension}"
     else:
       file_name = f"{file_data['title'][0]}{extension}"
 
