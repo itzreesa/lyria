@@ -1,6 +1,6 @@
 Lyria's "organizer" component.
 
-Usage: `lyria organizee [target] [source] [--dry-run]`
+Usage: `lyria organize [target] [source] [--dry-run]`
 
 Iterates through every music file in [source] and reorganizes it in [target].
 The structure will look something like that:
