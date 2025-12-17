@@ -37,3 +37,12 @@ Fetches synced lyrics, and writes it to the same path as file, with .lrc extensi
 Iterates through every music file in [source] and reorganizes it in [target].  
 The structure will look something like that: `Artist/Album/Disc-Track Title.Extension`  
 For example: `Ado/Kyougen/01-11 Usseewa.mp3`
+
+### 'cover' component
+**See the explain [file](explain/cover.txt) for more.**  
+
+> Usage: `lyria cover [target] [cover] [-r|--recursive] [--dry-run] [-f|--force]`
+
+Sets art cover from `[cover]` for every file in `[target]` folder.
+If used `[-r|--recursive]`, also processes sub-directories.
+Does not replace covers, unless `[-f|--force]` is specified.
