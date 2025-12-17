@@ -41,11 +41,6 @@ parser.add_argument("source_path", # used for organizer
                     type=str)
 
 # toggles
-parser.add_argument("-e", "--explain",
-                    help="toggle explain selected component",
-                    action="store_true",
-                    default=False,
-                    required=False)
 parser.add_argument("-r", "--recursive",
                     help="toggle recursive mode, doesn't work for organizer mode",
                     action="store_true",
@@ -53,6 +48,11 @@ parser.add_argument("-r", "--recursive",
                     required=False)
 parser.add_argument("--dry-run",
                     help="toggle dry run, process files without doing anything",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("-e", "--explain",
+                    help="toggle explain selected component",
                     action="store_true",
                     default=False,
                     required=False)
@@ -73,6 +73,7 @@ class LyriaConfig():
   dry_run = False
   verbose = False
   debug = False
+  _version_friendly = LYRIA_VERSION_FRIENDLY
 
 class Lyria():
   def __init__(self, args):
@@ -81,7 +82,7 @@ class Lyria():
     self._setup()
     
   def _setup(self,):
-    self.config.recursive = False
+    self.config.recursive = self.args.recursive
     self.config.dry_run = self.args.dry_run
     self.config.verbose = self.args.verbose
     self.config.debug = self.args.debug
