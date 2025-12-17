@@ -38,7 +38,7 @@ class Lyria():
     self.config.headers = requests.utils.default_headers()
     self.config.headers.update(
       {
-        'User-Agent': "lyria v0.1 (WIP) (https://github.com/itzreesa)"
+        'User-Agent': "lyria v1.0k (https://github.com/itzreesa/lyria)"
       }
     )
 
