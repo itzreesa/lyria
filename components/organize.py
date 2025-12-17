@@ -83,8 +83,9 @@ class SongOrganizer():
         print(f" ~ fail ~ file {file_path} doesn't contian essential tags.")
         count_fail += 1
         continue
-
-      os.makedirs(location, exist_ok=True)
+      
+      if not self.config.dry_run:
+        os.makedirs(location, exist_ok=True)
         #print(f" ~ fail ~ failed to create a directory structure for {file_path}")
         #count_fail += 1
         #continue
