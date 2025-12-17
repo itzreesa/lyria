@@ -1,3 +1,9 @@
+LYRIA_VERSION_MAJOR = 1
+LYRIA_VERSION_MINOR = 2
+LYRIA_VERSION_PATCH = 4
+
+LYRIA_VERSION_FRIENDLY = f"{LYRIA_VERSION_MAJOR}.{LYRIA_VERSION_MINOR}.{LYRIA_VERSION_PATCH}"
+
 def extract_tags(file_data, args) -> tuple:
   artist = file_data["artist"][0]
   album = ""

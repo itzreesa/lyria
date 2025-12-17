@@ -1,148 +1,132 @@
 #!/usr/bin/env python3
 
-from components.lyrics import LyricFetcher
-from components.organize import SongOrganizer
-from components.cover import CoverPainter
+import subprocess
+import venv
+import sys
+import os
 
-from explain import LyriaExplain
+def _create_venv(base_path, venv_path):
+  print("[lyria] creating venv.", end='\r')
+  os.makedirs(venv_path, exist_ok=True)
+  venv.create(venv_path, with_pip=True)
+  print("[ ok! ")
+  subprocess.check_call([os.path.join(venv_path, "bin", "python"), os.path.join(base_path, "lyria.py"), "$lyria_update_venv"])
 
-import argparse
+def install_requirements():
+  base_path = os.path.dirname(os.path.realpath(__file__))
+  venv_path = os.path.join(base_path, "venv")
 
-LYRIA_VERSION_MAJOR = 1
-LYRIA_VERSION_MINOR = 2
-LYRIA_VERSION_PATCH = 3
+  print("[lyria] updating venv.", end='\r')
 
-LYRIA_VERSION_FRIENDLY = f"{LYRIA_VERSION_MAJOR}.{LYRIA_VERSION_MINOR}.{LYRIA_VERSION_PATCH}"
+  req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
+  subprocess.check_call([os.path.join(venv_path, 'bin', 'pip'), 'install', '--upgrade', '-r', req_file])
+  
+  print("[ ok! ] updating venv.")
+  print("~ lyria is now ready to use!")
 
-parser = argparse.ArgumentParser(
-  prog="lyria",
-  description="your silly song manager",
-  epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (github.com/itzreesa/lyria)"
-)
+def enter_venv():
+  base_path = os.path.dirname(os.path.realpath(__file__))
+  venv_path = os.path.join(base_path, "venv")
+  if not os.path.exists(venv_path):
+    _create_venv(base_path, venv_path)
+    return
+  try:
+    subprocess.check_call([os.path.join(venv_path, "bin", "python"), base_path] + sys.argv[1:])
+  except:
+    pass
+  exit(0)
 
-# components
-parser.add_argument("component",
-                    help="select component used",
-                    choices=["lyrics", "organize", "cover"],
-                    default="lyrics",
-                    const="lyrics",
-                    nargs="?",
-                    type=str)
+def _download_file(url, dest):
+  import urllib.request
+  import shutil
 
-# positionals
-parser.add_argument("path",
-                    help="base path, used as target for components",
-                    default=".", 
-                    nargs="?",
-                    type=str)
-parser.add_argument("source_path", # used for organizer
-                    help="source path, used as input for certain components",
-                    default=None, 
-                    nargs="?",
-                    type=str)
+  print("~ ... ~ download newest tarball", end='\r')
+  with urllib.request.urlopen(url) as res:
+    with open(dest, "wb") as out:
+      shutil.copyfileobj(res, out)
+  print("~ ok!")
 
-# toggles
-parser.add_argument("-r", "--recursive",
-                    help="toggle recursive mode, doesn't work for organizer mode",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("-f", "--force",
-                    help="force operation on files",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("--dry-run",
-                    help="toggle dry run, process files without doing anything",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("--forget-not-found",
-                    help="for lyrics, creates empty .lrc if can't find lyrics",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("-e", "--explain",
-                    help="toggle explain selected component",
-                    action="store_true",
-                    default=False,
-                    required=False)
+def _extract(source, dest):
+  print("~ ... ~ extract tarball", end='\r')
+  cmd = [
+    "tar", "-xzf", source, "--strip-components=1", "-C", dest
+  ]
+  subprocess.run(cmd, check=True)
+  print("~ ok!")
 
-parser.add_argument("--artist",
-                    help="override artist name",
-                    nargs="?",
-                    default=False,
-                    required=False)
-parser.add_argument("--album",
-                    help="override album name",
-                    nargs="?",
-                    default=False,
-                    required=False)
+def _chmod(file,):
+  import platform
+  import stat
+  if platform.system() == "Windows":
+    return
+  print("~ ... ~ chmod executable", end='\r')
+  os.chmod(file, os.stat(file).st_mode | stat.S_IEXEC)
+  print("~ ok!")
 
-# about
-parser.add_argument("-v", "--verbose",
-                    help="toggle more verbose output, e.g. skipped, invalid entries",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("--debug",
-                    help="toggle debug mode",
-                    action="store_true",
-                    default=False,
-                    required=False)
+def _relink(target, source):
+  print("~ ... ~ linking executable", end='\r')
+  if os.path.exists(source):
+    os.remove(source)
+  os.symlink(target, source)
+  print("~ ok!")
 
-class LyriaConfig():
-  dry_run = False
-  verbose = False
-  debug = False
-  _version_friendly = LYRIA_VERSION_FRIENDLY
+def update_lyria():
+  import requests
+  import tempfile
+  from components.common import LYRIA_VERSION_FRIENDLY, LYRIA_VERSION_MAJOR, LYRIA_VERSION_MINOR, LYRIA_VERSION_PATCH
+  TAGS_URL = "https://api.github.com/repos/itzreesa/lyria/tags"
+  res = requests.get(url=TAGS_URL)
+  if res.status_code != 200:
+    print("[error] can't fetch tags!")
+    exit(1)
+  data = res.json()
+  if not len(data) > 0:
+    print("[error] api error. (response len == 0)")
+    exit(1)
+  if not "name" in data[0]:
+    print("[error] api error. ('name' not in data[0])")
+    exit(1)
 
-class Lyria():
-  def __init__(self, args):
-    self.config = LyriaConfig()
-    self.args = args
-    self._setup()
+  is_newer = False
+
+  current_tag = f"v{LYRIA_VERSION_FRIENDLY}"
+  newest_tag = data[0]["name"]
+  
+  tag = data[0]["name"][1:].split('.')
+  if int(tag[0]) > LYRIA_VERSION_MAJOR:
+    is_newer = True
+  if int(tag[1]) > LYRIA_VERSION_MINOR:
+    is_newer = True
+  if int(tag[2]) > LYRIA_VERSION_PATCH:
+    is_newer = True
     
-  def _setup(self,):
-    self.config.recursive = self.args.recursive
-    self.config.force = self.args.force
-    self.config.dry_run = self.args.dry_run
-    self.config.verbose = self.args.verbose
-    self.config.debug = self.args.debug
+  if not is_newer:
+    print(f"~ up to date")
+    exit(1)
+  
+  print(f"~ {current_tag} => {newest_tag}, updating!")
+  
+  LYRIA_DIR = os.path.join(os.getenv("HOME"), ".local", "share", "lyria")
+  BIN_DIR = os.path.join(os.getenv("HOME"), ".local", "bin")
+  TARBALL_URL = data[0]["tarball_url"]
 
-  def start(self,):
-    if self.config.debug:
-      print(f"[debug] argparse: {self.args}")
+  os.makedirs(LYRIA_DIR, exist_ok=True)
+  os.makedirs(BIN_DIR, exist_ok=True)
 
-    component = None
+  with tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz') as temp_file:
+    _download_file(TARBALL_URL, temp_file.name)
+    _extract(temp_file.name, LYRIA_DIR)
+    _chmod(os.path.join(LYRIA_DIR, "lyria.py"))
+    _relink(os.path.join(LYRIA_DIR, "lyria.py"), os.path.join(BIN_DIR, "lyria"))
+  print(f"~ lyria was updated!")
 
-    if self.args.explain:
-      component = LyriaExplain(self.args.component)
-      component.run()
-      exit(0)
-
-    ret = 0
-
-    match self.args.component:
-      case "lyrics":
-        component = LyricFetcher(self.config, self.args)
-      case "organize":
-        component = SongOrganizer(self.config, self.args)
-      case "cover":
-        component = CoverPainter(self.config, self.args)
-      case _:
-        parser.print_help()
-        exit(1)
-        
-    ret = component.run()
-
-    if ret == -1:
-      parser.print_usage()
-      
-def main():
-  args = parser.parse_args()
-  ly = Lyria(args)
-  ly.start()
+if len(sys.argv) > 1:
+  if sys.argv[1] == "$lyria_update_venv":
+    install_requirements()
+  elif sys.argv[1] == "update":
+    update_lyria()
+    install_requirements()
+    exit(0)
 
 if __name__ == "__main__":
-  main()
+  enter_venv()
