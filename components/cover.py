@@ -25,6 +25,18 @@ class CoverPainter():
     self.cover_height = None
     self.cover_depth = None
 
+  def _ret_print(self, ret, file):
+    sys.stdout.write("\r\033[K")
+    match ret:
+      case 0:
+        print(f" ~ success => {self.args.path}")
+      case 2:
+        print(f" ~ fail/unsupported => {self.args.path}")
+      case 11:
+        print(f" ~ skip/exists => {self.args.path}")
+      case _:
+        print(f" ~ fail => {self.args.path}")
+
   def _convert_cover_file(self,) -> bool:
     img = None
     try:
@@ -118,17 +130,7 @@ class CoverPainter():
       
       ret = self._process_file(file,)
       sys.stdout.write("\r\033[K")
-      if ret == 0:
-        print(" ~ success ~ ", os.path.abspath(file))
-
-      elif ret == 2:
-        print(" ~ fail/unsupported ~ ", os.path.abspath(file)) 
-
-      elif ret == 11:
-        print(" ~ skip/exists ~ ", os.path.abspath(file))
-
-      else:
-        print(" ~ fail ~ ", os.path.abspath(file))
+      self._ret_print(ret, file)
 
   def run(self,):
     if not self.args.path:
@@ -151,18 +153,11 @@ class CoverPainter():
     if os.path.isdir(self.args.path):
       self._process_directory(self.args.path)
     else:
-      print(f" ~ single file => {self.args.path} ", end='\r')
-      ret = self._process_file(self.args.path)
-      if ret == 0:
-        print(f" ~ success => {self.args.path}")
-      elif ret == 2:
-        print(f" ~ fail/unsupported => {self.args.path}")
-      elif ret == 11:
-        print(f" ~ fail/exists => {self.args.path}")
-      else:
-        print(f" ~ fail => {self.args.path}")
+      file = self.args.path
+      print(f" ~ single file => {file} ", end='\r')
+      ret = self._process_file(file)
+      self._ret_print(ret, file)
       
-
     print(f"[cover] deleting temp file .lyria_cover.tmp")
     if os.path.exists(".lyria_cover.tmp"):
       os.remove(".lyria_cover.tmp")
