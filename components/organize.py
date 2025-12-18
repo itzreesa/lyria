@@ -4,7 +4,6 @@ import sys
 import os
 
 import mutagen
-import time
 
 from components.common import extract_tags
 
