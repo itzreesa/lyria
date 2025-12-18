@@ -1,62 +1,98 @@
-# lyria
-A tool for managing your songs!
 
-## Installation (Automatic)
-For `Linux` and `macOS`, use this command in terminal:
+<h1 align="center">lyria</h1>
+<p align="center">
+<strong>your new song manager</strong>
+</br>
+</br>
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/itzreesa/lyria?style=flat-square&color=faa">
+<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/itzreesa/lyria?style=flat-square&color=fdf">
+<img alt="GitHub License" src="https://img.shields.io/github/license/itzreesa/lyria?style=flat-square&color=aaf">
+</br>
+<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/itzreesa/lyria?style=flat-square&labelColor=4B8BBE&color=FFE873">
+<img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/t/itzreesa/lyria?style=flat-square&color=bfb">
+<img alt="Static Badge" src="https://img.shields.io/badge/made%20with-%3A3-d26?style=flat-square">
+</p>
 
-> `curl https://reesa.cc/lyria | sh`  
+#
 
-Make sure you have `python` installed, and `~/.local/bin` in your `$PATH`
+### Quickstart
+On *Linux* and *macOS*, type this into your terminal.
+```bash
+curl https://reesa.cc/lyria | sh
+```
+**lyria** will be installed into `~/.local/share/lyria` and linked to `~/.local/bin`.  
+Make sure it's in your `PATH`. And you have python installed.
 
-## Installation (Manual)
-- Install python3 (tested on 3.14)
-- Clone or Download this repository somewhere safe.
-- Create `~/.local/bin` and add it to your `PATH`
-- Link `lyria.py` to `~/.local/bin/lyria`
+#### Install manually (and windows)
+Prepare folders `~/.local/share/lyria` and `~/.local/bin`  
 
-## Updating
-Use this command to update automatically to the newest tag.
+**[Download](https://github.com/itzreesa/lyria/tarball/main)** the tarball from main branch or get the latest **[release](https://github.com/itzreesa/lyria/releases/latest)**
 
-> `lyria update` 
+Unpack the tarball to `~/.local/share/lyria`
 
-If this doesn't work, repeat the steps from manual installation section.
+Make sure it's executable (windows doesn't need it)
+```bash
+chmod +x lyria.py
+```
+Link the executable (idk if it'll work on windows):
+```bash
+ln -sf "$HOME/.local/share/lyria/lyria.py" "$HOME/.local/bin/lyria"
+```
+If you haven't already, add `~/.local/bin` to your `PATH`!
+```bash
+# for bash
+echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
 
-## Usage
-lyria is split into components,  
-use `lyria --help` to see built-in help  
-to see help for each component, run `lyria [component] -e` or `--explain`.
+# for zsh
+echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.zshrc
+```
 
-If you just want to grab lyrics for every song in the current folder (non-recursive), just run `lyria`.
+Now, run `lyria` once to set up the venv and you'll be good to go!  
+If there's a new version available, run this to update:
+```bash lyria
+lyria update
+```
 
-## Components
+#
+### Usage
+lyria is split into *components*, explanation for them can be viewed using
+```bash
+lyria -e <component>
+```
+or you can see the text files in **[this](./explain/)** directory.
 
-### 'lyrics' component
-**See the explain [file](explain/lyrics.txt) for more.**  
+**Below you can find a few examples,   
+but I strongly recommend checking out the docs, so you can use *lyria* for what you actually need it for.**
 
-'lyrics' component is using [lrclib.net](https://lrclib.net/docs)'s [api] to fetch lyrics.  
-> Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run]`  
-> Alternative: `lyria` => `lyria lyrics .`  
+#### lyric grabbing
+Fetch lyrics for all files in the current directory.  
+The minimal example.
+```bash
+lyria
+```
 
-Scans selected `[path]`, defaults to the current directory, for music files.
-If used `[-r|--recursive]`, also scans sub-directories.
-If used `[--forget-not-found]`, for every song with no lyrics found, there will be an empty .lrc file written
+Fetch lyrics for folder `Music/` recursively.  
+And for every song that you can't find lyrics for, create an empty file to skip it on next use.
+```bash
+lyria lyrics Music/ -r --forget-not-found
+```
 
-Fetches synced lyrics, and writes it to the same path as file, with .lrc extension  
+#### music organization
+Get all the songs from folder `Import/` and organize them into the folder `Music/`.  
+Force artist name to be "Mozart`.  
+Perform a dry run, do not actually move files.
+```bash
+lyria organize Music/ Import/ --artist="Mozart" --dry-run
+```
 
-### 'organize' component
-**See the explain [file](explain/organize.txt) for more.**  
+# 
+### Issues
+If you're having an issue, or you have a proposal for a feature, please use the [Issues](https://github.com/itzreesa/lyria/issues) tab.
 
-> Usage: `lyria organize [target] [source] [--dry-run]`  
+# 
+### License
+`lyria`'s source code is licensed under the MIT license. [here](./LICENSE)
 
-Iterates through every music file in [source] and reorganizes it in [target].  
-The structure will look something like that: `Artist/Album/Disc-Track Title.Extension`  
-For example: `Ado/Kyougen/01-11 Usseewa.mp3`
-
-### 'cover' component
-**See the explain [file](explain/cover.txt) for more.**  
-
-> Usage: `lyria cover [target] [cover] [-r|--recursive] [--dry-run] [-f|--force]`
-
-Sets art cover from `[cover]` for every file in `[target]` folder.
-If used `[-r|--recursive]`, also processes sub-directories.
-Does not replace covers, unless `[-f|--force]` is specified.
+<br></br>
+# 
+###### thanks for reading me! ~readme file
