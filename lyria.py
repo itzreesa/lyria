@@ -70,7 +70,7 @@ def _relink(target, source):
   os.symlink(target, source)
   print("~ ok!")
 
-def update_lyria():
+def _update_lyria():
   import requests
   import tempfile
   from components.common import LYRIA_VERSION_FRIENDLY, LYRIA_VERSION_MAJOR, LYRIA_VERSION_MINOR, LYRIA_VERSION_PATCH
@@ -102,7 +102,7 @@ def update_lyria():
     
   if not is_newer:
     print(f"~ up to date")
-    exit(1)
+    exit(0)
   
   print(f"~ {current_tag} => {newest_tag}, updating!")
   
@@ -118,15 +118,28 @@ def update_lyria():
     _extract(temp_file.name, LYRIA_DIR)
     _chmod(os.path.join(LYRIA_DIR, "lyria.py"))
     _relink(os.path.join(LYRIA_DIR, "lyria.py"), os.path.join(BIN_DIR, "lyria"))
+
+  install_requirements()
+
   print(f"~ lyria was updated!")
+
+def update_lyria():
+  base_path = os.path.dirname(os.path.realpath(__file__))
+  venv_path = os.path.join(base_path, "venv")
+  try:
+    subprocess.check_call([os.path.join(venv_path, "bin", "python"), os.path.join(base_path, "lyria.py"), "$lyria_update_self"])
+  except:
+    pass
 
 if len(sys.argv) > 1:
   if sys.argv[1] == "$lyria_update_venv":
     install_requirements()
     exit(0)
+  elif sys.argv[1] == "$lyria_update_self":
+    _update_lyria()
+    exit(0)
   elif sys.argv[1] == "update":
     update_lyria()
-    install_requirements()
     exit(0)
 
 if __name__ == "__main__":
