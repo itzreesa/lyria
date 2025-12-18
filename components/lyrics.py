@@ -16,6 +16,9 @@ class LyricFetcher():
     self.count_downloaded = 0
     self.count_exist = 0
     self.count_warn = 0
+
+    self.count_total = 0
+    self.count_processed = 0
     self._setup()
 
   def _setup(self,):
@@ -121,33 +124,42 @@ class LyricFetcher():
     os.chdir(directory)
     files = os.listdir()
 
+    self.count_total += len(files)
+
     for file in files:
       file_name = Path(file)
-      print(f" ~ process ~ {os.path.abspath(file)}", end='\r')
+      self.count_processed = self.count_downloaded + self.count_exist + self.count_warn
+      sys.stdout.write("\r\033[K")
+      print(f" ~ {self.count_processed}/{self.count_total} ~ {os.path.abspath(file)}", end='\r')
       if file_name.stem.startswith('.'):
-        sys.stdout.write("\r\033[K")
-        print(f" ~ skip/hidden ~ {os.path.abspath(file)}")
+        if self.config.verbose:
+          sys.stdout.write("\r\033[K")
+          print(f" ~ skip/hidden ~ {os.path.abspath(file)}")
         self.count_warn += 1
         continue
 
       if ".lrc" in file_name.suffixes:
-        print(" ~ skip/exists ~ ", os.path.abspath(file))
+        self.count_total -= 1
         continue
 
       if os.path.isdir(file):
-        sys.stdout.write("\r\033[K")
+        if self.config.verbose:
+          sys.stdout.write("\r\033[K")
         if self.config.recursive:
-          print(" ~ processing directory ~ ", os.path.abspath(file))
+          if self.config.verbose:
+            print(" ~ processing directory ~ ", os.path.abspath(file))
           self._process_directory(file)
           os.chdir("..")
           continue
-  
-        print(" ~ skip/dir ~ ", os.path.abspath(file))
+        
+        if self.config.verbose:
+          print(" ~ skip/dir ~ ", os.path.abspath(file))
         continue
       
       ret = self._process_file(file,)
-      sys.stdout.write("\r\033[K")
-      self._ret_print(ret, file)
+      if self.config.verbose:
+        sys.stdout.write("\r\033[K")
+        self._ret_print(ret, file)
 
   def run(self,) -> int:
     if os.path.isdir(self.args.path):
@@ -160,6 +172,7 @@ class LyricFetcher():
       print(f" ~ single file => {file} ", end='\r')
       ret = self._process_file(file,)
       self._ret_print(ret, file)
-
+        
+    sys.stdout.write("\r\033[K")
     print(f"[lyria] done :3 \n downloaded - {self.count_downloaded}\n exist - {self.count_exist}\n warns - {self.count_warn}")
     return 0
