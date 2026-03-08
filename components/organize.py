@@ -37,11 +37,18 @@ class SongOrganizer():
     if album:
       if not single:
         path = os.path.join(path, album)
+
+    print(album, title)
     
     file_name = ""
     if 'discnumber' and 'tracknumber' in file_data and not single:
-      if file_data['discnumber'] and file_data['tracknumber']:
-        nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
+      disc_number = file_data['discnumber']
+      track_number = file_data['tracknumber']
+      if disc_number and track_number:
+        if disc_number == '1/1' or track_number == '1/1': # fix a weird bug i had?
+          nums = '1/1'
+        else:
+          nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
         file_name = f"{nums} {title}{extension}"
     elif 'tracknumber' in file_data and not single:
       if file_data['tracknumber']:
