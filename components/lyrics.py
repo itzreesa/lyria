@@ -80,7 +80,7 @@ class LyricComponent():
       case 0:
         print(" ~ success ~", file)
       case 1:
-        print(" ~ fail ~ ", file)
+        print(" ~ fail ~", file)
 
       case 2:
         if self.args.verbose:
@@ -102,7 +102,16 @@ class LyricComponent():
       
 
       case _:
-        print(" ~ fail ~ ", file)
+        print(" ~ fail ~", file)
+
+  def print_stats(self,):
+    if not self.args.silent:
+      self.count_total = self.count_downloaded + self.count_exist + self.count_warn
+      print("\n== stats")
+      print(f" ~ downloaded: {self.count_downloaded}")
+      print(f" ~ exist: {self.count_exist}")
+      print(f" ~ warn: {self.count_warn}")
+      print(f" ~~ total: {self.count_total}")
 
   def write_lyrics(self, path, data) -> int:
     lyrics = ""
@@ -212,14 +221,7 @@ class LyricComponent():
 
     if not self.args.recursive:
       do_files(files)
-      if not self.args.silent:
-        self.count_total = self.count_downloaded + self.count_exist + self.count_warn
-        # stats
-        print("\n== stats")
-        print(f" ~ downloaded: {self.count_downloaded}")
-        print(f" ~ exist: {self.count_exist}")
-        print(f" ~ warn: {self.count_warn}")
-        print(f" ~~ total: {self.count_total}")
+      self.print_stats()
       return
     
     for walked_dir in files:
@@ -231,21 +233,14 @@ class LyricComponent():
 
       do_files(new_file_list)
 
-    if not self.args.silent:
-      self.count_total = self.count_downloaded + self.count_exist + self.count_warn
-      # stats
-      print("\n== stats")
-      print(f" ~ downloaded: {self.count_downloaded}")
-      print(f" ~ exist: {self.count_exist}")
-      print(f" ~ warn: {self.count_warn}")
-      print(f" ~~ total: {self.count_total}")
+    self.print_stats()
 
   def run(self,) -> int:
     work_path = Path(self.args.path)
     
     if not work_path.exists():
       if not self.args.silent:
-        print(" & invalid path")
+        print(" ~ error ~ invalid path")
         return 1
 
     if work_path.is_file():
