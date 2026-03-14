@@ -56,7 +56,7 @@ class SongOrganizer():
     # first part
     artist = file_data.get("artist", None)
     if not artist: 
-      return None
+      return None # type: ignore
     if len(artist) > 1:
       artist = '; '.join(artist)
     else:
@@ -65,7 +65,7 @@ class SongOrganizer():
     
     title = file_data.get("title", None)
     if not title: 
-      return None
+      return None # type: ignore
     title = title[0]
     
     album = file_data.get("album", None)
@@ -130,7 +130,7 @@ class SongOrganizer():
   def organize(self,):
     files = [file for file in self.source.iterdir()]
     for file in files:
-      file_data = mutagen.File(file, easy=True)
+      file_data = mutagen.File(file, easy=True) # type: ignore
       if not file_data:
         self.progress_print(2, file)
         continue
