@@ -1,85 +1,36 @@
 #!/usr/bin/env python3
 
-from components.lyrics import LyricFetcher
+from components.lyrics import LyricComponent
 from components.organize import SongOrganizer
 from components.cover import CoverPainter
 
 from explain import LyriaExplain
 
-from pathlib import Path
-
 import argparse
 
 from components.common import LYRIA_VERSION_FRIENDLY
 
+epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (https://github.com/itzreesa/lyria)"
+
+
 parser = argparse.ArgumentParser(
   prog="lyria",
   description="your silly song manager",
-  epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (github.com/itzreesa/lyria)"
+  epilog=epilog
 )
 
-# components
-parser.add_argument("component",
-                    help="select component used",
-                    choices=["lyrics", "organize", "cover"],
-                    default="lyrics",
-                    const="lyrics",
-                    nargs="?",
-                    type=str)
-
-# positionals
-parser.add_argument("path",
-                    help="base path, used as target for components",
-                    default=".", 
-                    nargs="?",
-                    type=str)
-parser.add_argument("source_path", # used for organizer
-                    help="source path, used as input for certain components",
-                    default=None, 
-                    nargs="?",
-                    type=str)
-
-# toggles
-parser.add_argument("-r", "--recursive",
-                    help="toggle recursive mode, doesn't work for organizer mode",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("-f", "--force",
-                    help="force operation on files",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("--dry-run",
-                    help="toggle dry run, process files without doing anything",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("--forget-not-found",
-                    help="for lyrics, creates empty .lrc if can't find lyrics",
-                    action="store_true",
-                    default=False,
-                    required=False)
-parser.add_argument("-e", "--explain",
-                    help="toggle explain selected component",
-                    action="store_true",
-                    default=False,
-                    required=False)
-
-parser.add_argument("--artist",
-                    help="override artist name",
-                    nargs="?",
-                    default=False,
-                    required=False)
-parser.add_argument("--album",
-                    help="override album name",
-                    nargs="?",
-                    default=False,
-                    required=False)
-
-# about
 parser.add_argument("-v", "--verbose",
                     help="toggle more verbose output, e.g. skipped, invalid entries",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("-s", "--silent",
+                    help="disables all printed output, for scripting",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser.add_argument("-V", "--version",
+                    help="print the version and quit",
                     action="store_true",
                     default=False,
                     required=False)
@@ -89,58 +40,134 @@ parser.add_argument("--debug",
                     default=False,
                     required=False)
 
-class LyriaConfig():
-  dry_run = False
-  verbose = False
-  debug = False
-  _version_friendly = LYRIA_VERSION_FRIENDLY
+subparsers = parser.add_subparsers(
+  title="components",
+  description="components avaliable to select",
+  dest="component",
+  required=False
+)
 
-class Lyria():
-  def __init__(self, args):
-    self.config = LyriaConfig()
-    self.args = args
-    self._setup()
-    
-  def _setup(self,):
-    self.config.recursive = self.args.recursive
-    self.config.force = self.args.force
-    self.config.dry_run = self.args.dry_run
-    self.config.verbose = self.args.verbose
-    self.config.debug = self.args.debug
+parser.set_defaults(component="lyrics", path=".", recursive=False, dry_run=False, forget_not_found=False)
 
-  def start(self,):
-    if self.config.debug:
-      print(f"[debug] argparse: {self.args}")
+# lyrics
+parser_lyrics = subparsers.add_parser("lyrics", epilog=epilog)
+parser_lyrics.add_argument("path",
+                    help="work path, where the component will work in, defaults to the current directory or a single file",
+                    default=".",
+                    nargs="?",
+                    type=str)
+parser_lyrics.add_argument("-r", "--recursive",
+                    help="scans children of the work directory, and recursively..",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser_lyrics.add_argument("-d", "--dry-run",
+                    help="parse files, without fetching lyrics",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser_lyrics.add_argument("-n", "--forget-not-found",
+                    help="if cannot find lyrics, creates an empty placeholder file",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser_lyrics.add_argument("--forget-time",
+                    help="age (in days) of empty .lrc files that will be respected upon this fetch",
+                    required=False,
+                    nargs="?",
+                    type=int)
 
-    component = None
+# organize
+praser_organize = subparsers.add_parser("organize", epilog=epilog)
+praser_organize.add_argument("source",
+                    help="path, from where the files will be taken",
+                    default=".",
+                    nargs="?",
+                    type=str)
+praser_organize.add_argument("target",
+                    help="directory, where the files will be organized in",
+                    default=None,
+                    nargs="?",
+                    type=str)
+praser_organize.add_argument("-d", "--dry-run",
+                    help="parse files, without fetching lyrics",
+                    action="store_true",
+                    default=False,
+                    required=False)
+praser_organize.add_argument("--artist",
+                    help="override artist name",
+                    nargs="?",
+                    default=None,
+                    required=False)
+praser_organize.add_argument("--album",
+                    help="override album name",
+                    nargs="?",
+                    default=None,
+                    required=False)
+praser_organize.add_argument("--album-artist",
+                    help="override album artist name",
+                    nargs="?",
+                    default=None,
+                    required=False)
 
-    if self.args.explain:
-      component = LyriaExplain(self.args.component)
-      component.run()
-      exit(0)
+# cover
+parser_cover = subparsers.add_parser("cover", epilog=epilog)
+parser_cover.add_argument("source",
+                    help="path to the cover image",
+                    default=".",
+                    nargs="?",
+                    type=str)
+parser_cover.add_argument("target",
+                    help="file or directory of files to apply covers there",
+                    default=None,
+                    nargs="?",
+                    type=str)
+parser_cover.add_argument("-f", "--force",
+                    help="force overwrite image data if it exists already",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser_cover.add_argument("-r", "--recursive",
+                    help="scans children of the work directory, and recursively..",
+                    action="store_true",
+                    default=False,
+                    required=False)
+parser_cover.add_argument("-d", "--dry-run",
+                    help="parse files, without fetching lyrics",
+                    action="store_true",
+                    default=False,
+                    required=False)
 
-    ret = 0
+# explain, not technically a component
+parser_explain = subparsers.add_parser("explain", epilog=epilog)
+parser_explain.add_argument("explain",
+                    help="component to show explain file for",
+                    choices=["lyrics","organize","cover"])
 
-    match self.args.component:
-      case "lyrics":
-        component = LyricFetcher(self.config, self.args)
-      case "organize":
-        component = SongOrganizer(self.config, self.args)
-      case "cover":
-        component = CoverPainter(self.config, self.args)
-      case _:
-        parser.print_help()
-        exit(1)
-        
-    ret = component.run()
-
-    if ret == -1:
-      parser.print_usage()
-      
 def main():
   args = parser.parse_args()
-  ly = Lyria(args)
-  ly.start()
+  if args.debug:
+    print("~ dbg: ", args)
+
+  component = None
+  match args.component:
+    case "lyrics":
+      component = LyricComponent(args)
+    case "organize":
+      component = SongOrganizer(args)
+    case "cover":
+      component = CoverPainter(args)
+    case "explain":
+      component = LyriaExplain(args.explain)
+
+  if not component:
+    parser.print_usage()
+    exit(1)
+
+  ret = component.run()
+  if ret == -1:
+    parser.print_usage()
+    exit(ret)
 
 if __name__ == "__main__":
   main()
