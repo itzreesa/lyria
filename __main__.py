@@ -90,6 +90,11 @@ praser_organize.add_argument("-d", "--dry-run",
                     action="store_true",
                     default=False,
                     required=False)
+praser_organize.add_argument("-a", "--prefer-album-artist",
+                    help="use album artist instead of artist for organizing, defaults to true",
+                    action="store_true",
+                    default=True,
+                    required=False)
 praser_organize.add_argument("--artist",
                     help="override artist name",
                     nargs="?",
