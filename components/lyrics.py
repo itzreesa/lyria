@@ -143,7 +143,7 @@ class LyricComponent():
     return 0
 
   def process_file(self, path: Path) -> int:
-    file_data = mutagen.File(path, easy=True)
+    file_data = mutagen.File(path, easy=True) # type: ignore
     if not file_data:
       self.count_warn += 1
       return 2
