@@ -5,7 +5,7 @@ import sys
 import mutagen
 import requests
 
-from components.common import LYRIA_VERSION_FRIENDLY, extract_tags
+from components.common import LYRIA_VERSION_FRIENDLY
 
 class LyricFetcher():
   def __init__(self, debug, silent):
