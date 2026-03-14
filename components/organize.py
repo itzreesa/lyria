@@ -1,139 +1,168 @@
 from pathlib import Path
-import shutil
+import traceback
 import sys
-import os
 
 import mutagen
 
-from components.common import extract_tags
+from components.common import LYRIA_VERSION_FRIENDLY
 
 class SongOrganizer():
-  def __init__(self, config, args):
-    self.config = config
+  def __init__(self, args):
     self.args = args
-  
-  def _get_file_list(self,) -> list:
-    return os.listdir(self.args.source_path)
-  
-  # artist, album, discnumber, tracknumber, title
-  # there's also "date" and "albumartist"
-  # TODO: make it customizable throught a .yaml file
-  # TODO: make disc and tracknumber ignored through a flag
-  # TODO: (?) make album ignored through a flag
-  def _get_location(self, file_data, extension) -> tuple:
+    self.source = Path(self.args.source)
+    self.target = Path(self.args.target)
 
-    path = os.path.join(self.args.path)
-    if not file_data['artist']:
+    self.count_moved = 0
+    self.count_warn = 0
+
+  def progress_print(self, ret, file: Path):
+    if self.args.silent:
+      return
+    sys.stdout.write("\r\033[K")
+
+    if self.args.verbose:
+      file = file.absolute()
+
+    match ret:
+      case 0:
+        print(" ~ success ~", file)
+      case 1:
+        print(" ~ fail ~", file)
+
+      case 2:
+        if self.args.verbose:
+          print(" ~ fail/invalid ~", file)
+      case 6:
+        if self.args.verbose:
+          print(" ~ fail/move ~", file)
+
+      case 11:
+        if self.args.verbose:
+          print(" ~ skip/exists ~", file)
+
+      case _:
+        print(" ~ fail ~", file)
+
+  def print_stats(self,):
+    if not self.args.silent:
+      count_total = self.count_moved + self.count_warn
+      print("\n== stats")
+      print(f" ~ downloaded: {self.count_moved}")
+      print(f" ~ warn: {self.count_warn}")
+      print(f" ~~ total: {count_total}")
+
+  def compose_file_path(self, file_data, extension) -> Path:
+    # three parts, gathering data, composing directory structure and the file name
+    # first part
+    artist = file_data.get("artist", None)
+    if not artist: 
       return None
-    if not file_data['title']:
-      return None
-    
-    artist, album, title = extract_tags(file_data, self.args)
-
-    path = os.path.join(path, artist)
-
-    single = album == title
-
-    if album:
-      if not single:
-        path = os.path.join(path, album)
-
-    print(album, title)
-    
-    file_name = ""
-    if 'discnumber' and 'tracknumber' in file_data and not single:
-      disc_number = file_data['discnumber']
-      track_number = file_data['tracknumber']
-      if disc_number and track_number:
-        if disc_number == '1/1' or track_number == '1/1': # fix a weird bug i had?
-          nums = '1/1'
-        else:
-          nums = "%02d-%02d" % (int(file_data['discnumber'][0]), int(file_data['tracknumber'][0]), )
-        file_name = f"{nums} {title}{extension}"
-    elif 'tracknumber' in file_data and not single:
-      if file_data['tracknumber']:
-        file_name = f"{file_data['tracknumber'][0]} {title}{extension}"
+    if len(artist) > 1:
+      artist = '; '.join(artist)
     else:
-      file_name = f"{title}{extension}"
+      artist = artist[0]
 
-    return path, file_name
-
-  def _place_file(self, file, location, name):
-    if self.args.dry_run:
-      return True
     
-    if not os.path.exists(location):
-      return False
+    title = file_data.get("title", None)
+    if not title: 
+      return None
+    title = title[0]
     
-    final_path = os.path.join(location, name)
-    shutil.move(file, final_path)
+    album = file_data.get("album", None)
+    if album:
+      album = album[0]
     
-    return True
+    album_artist = file_data.get("albumartist", None)
+    if album_artist:
+      album_artist = album_artist[0]
 
-  def _organize(self,):
-    count_success = 0
-    count_fail = 0
+    is_single = False
+    if not album:
+      is_single = True
+    elif album == title:
+      is_single = True
+    elif "single" in album.lower():
+      is_single = True
 
-    print(f"[lyria] running organize on \"{self.args.source_path}\"")
+    disc_number = file_data.get("discnumber", None)
+    track_number = file_data.get("discnumber", None)
 
-    files = self._get_file_list() # get files from self.args.source_path
+    # second part
+    new_path = Path(self.target)
+
+    if self.args.prefer_album_artist and album_artist:
+      new_path = new_path / album_artist
+    else:
+      new_path = new_path / artist
+
+    if not is_single and album:
+      new_path = new_path / album
+
+    if not self.args.dry_run:
+      new_path.mkdir(parents=True, exist_ok=True)
+
+    # third part
+    # TODO: make it customizable in a config file
+    file_name_template = "$disc$title$extension"
+
+    nums = ""
+    if disc_number and track_number and not is_single:
+      if disc_number == '1/1' or track_number == '1/1': # weird bug?
+        nums = '1/1 - '
+      else:
+        nums = "%02d-%02d " % (int(disc_number[0]), int(track_number[0]))
+
+    file_name = file_name_template
+    file_name = file_name.replace("$disc", nums)
+    file_name = file_name.replace("$title", title)
+    if artist:
+      file_name = file_name.replace("$artist", artist)
+    if album:
+      file_name = file_name.replace("$album", album)
+    if album_artist:
+      file_name = file_name.replace("$albumartist", album_artist)
+    file_name = file_name.replace("$extension", extension)
+
+    new_path = new_path / file_name
+
+    return new_path
+
+  def organize(self,):
+    files = [file for file in self.source.iterdir()]
     for file in files:
-
-      file = os.path.join(self.args.source_path, file)
-
-      file_path = Path(file)
-      if os.path.isdir(file):
-        print(f" ~ fail/dir {file_path}")
-        continue
-  
-      file_data = mutagen.File(file, easy=True) # self.get_file_data(file)
-      print(f" ~ process ~ {file_path}", end='\r')
-
+      file_data = mutagen.File(file, easy=True)
       if not file_data:
-        print(f" ~ fail/invalid ~ {file_path}")
-        count_fail += 1
-        continue
-
-      if self.config.debug:
-        print(f"\t ~ debug, {file_path} => {file_data.pprint()}")
-
-      location, file_name = self._get_location(file_data, file_path.suffix)
-      if not location:
-        print(f" ~ fail ~ file {file_path} doesn't contian essential tags.")
-        count_fail += 1
+        self.progress_print(2, file)
         continue
       
-      if not self.config.dry_run:
-        os.makedirs(location, exist_ok=True)
-        #print(f" ~ fail ~ failed to create a directory structure for {file_path}")
-        #count_fail += 1
-        #continue
+      try:
+        new_path = self.compose_file_path(file_data, file.suffix)
+      except Exception:
+        print(traceback.format_exc())
+      if not new_path:
+        self.progress_print(1, file)
+        continue
 
-      success = self._place_file(file, location, file_name)
-      if success:
-        count_success += 1
-      else:
-        count_fail += 1
-      pass
+      if not self.args.dry_run:
+        try:
+          file.move(new_path)
+        except Exception:
+          print(traceback.format_exc())
+          self.progress_print(6, file)
 
-      sys.stdout.write("\r\033[K")
-      print(f" ~ success ~ {file_path} => {location}/{file_name}")
+      if not self.args.silent:
+        print(f" ~ {file} => {new_path}")
 
-    print(f"[lyria] done :3 \n moved - {count_success}\n failed - {count_fail}")
-
-  def run(self,) -> int:
-    if not self.args.path:
-      print("[error] did not specify target path.")
-      return -1
-    if not self.args.source_path:
-      print("[error] did not specify source path.")
-      return -1
-    
-    if not os.path.exists(self.args.path):
-      print("[error] invalid target path.")
+  def run(self,):
+    if not self.source.exists():
+      if not self.args.silent:
+        print(" ~ error ~ invalid source path")
       return 1
-    if not os.path.exists(self.args.source_path):
-      print("[error] invalid source path.")
-      return 1
+    if not self.target.exists():
+      if not self.args.silent:
+        print(" ~ error ~ invalid target path")
+      return
     
-    self._organize()
+    self.organize()
+
+    self.print_stats()
