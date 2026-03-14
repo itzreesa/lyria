@@ -1,6 +1,6 @@
 from pathlib import Path
+import traceback
 import sys
-import os
 
 from mutagen.id3 import APIC, PictureType
 from mutagen.mp3 import MP3
@@ -13,8 +13,7 @@ from PIL import Image
 MODE_TO_BPP = {'1':1, 'L':8, 'P':8, 'RGB':24, 'RGBA':32, 'CMYK':32, 'YCbCr':24, 'I':32, 'F':32}
 
 class CoverPainter():
-  def __init__(self, config, args):
-    self.config = config
+  def __init__(self, args):
     self.args = args
     self.count_painted = 0
     self.count_exist = 0
@@ -25,48 +24,63 @@ class CoverPainter():
     self.cover_height = None
     self.cover_depth = None
 
-  def _ret_print(self, ret, file):
+    self.source = None
+
+  def progress_print(self, ret, file: Path):
+    if self.args.silent:
+      return
     sys.stdout.write("\r\033[K")
     match ret:
       case 0:
-        print(f" ~ success => {self.args.path}")
+        print(" ~ success ~", file)
       case 2:
-        print(f" ~ fail/unsupported => {self.args.path}")
+        print(" ~ fail/unsupported ~", file)
       case 11:
-        print(f" ~ skip/exists => {self.args.path}")
+        print(" ~ skip/exists ~", file)
       case _:
-        print(f" ~ fail => {self.args.path}")
+        print(" ~ fail ~", file)
 
-  def _convert_cover_file(self,) -> bool:
+  def print_stats(self,):
+    if not self.args.silent:
+      self.count_total = self.count_painted + self.count_exist + self.count_warn
+      print("\n== stats")
+      print(f" ~ downloaded: {self.count_painted}")
+      print(f" ~ exist: {self.count_exist}")
+      print(f" ~ warn: {self.count_warn}")
+      print(f" ~~ total: {self.count_total}")
+
+  def _convert_cover_file(self,) -> int:
     img = None
     try:
-      img = Image.open(self.args.source_path)
+      img = Image.open(self.source)
     except Exception as e:
       print(f"[error] can't open file: {e}")
+      print(traceback.format_exc())
+      return 1
     try:
       img = img.convert("RGB")
       img.save(".lyria_cover.tmp", "JPEG")
     except Exception as e:
       print(f"[error] can't convert file: {e}")
-    self.cover_data = open(self.args.source_path, 'rb').read()
+    self.cover_data = open(self.source, 'rb').read()
     self.cover_width, self.cover_height = img.size
     self.cover_depth = MODE_TO_BPP[img.mode]
 
   def _paint_id3(self, file):
     audio = MP3(file)
-    if audio.tags.getall("APIC") and not self.config.force:
+    if audio.tags.getall("APIC") and not self.args.force:
       return 11
     audio.tags.delall("APIC")
     audio.tags.add(
       APIC(3, 'image/jpeg', 3, "Cover", self.cover_data)
     )
-    if not self.config.dry_run:
+    if not self.args.dry_run:
       audio.save(file)
     return 0
 
   def _paint_flac(self, file):
     audio = FLAC(file)
-    if audio.pictures and not self.config.force:
+    if audio.pictures and not self.args.force:
       return 11
     else:
       audio.clear_pictures()
@@ -78,23 +92,22 @@ class CoverPainter():
     picture.height = self.cover_height
     picture.depth = self.cover_depth
     audio.add_picture(picture)
-    if not self.config.dry_run:
+    if not self.args.dry_run:
       audio.save()
     return 0
 
   def _paint_mp4(self, file):
     audio = MP4(file)
-    if "covr" in audio.tags and not self.config.force:
+    if "covr" in audio.tags and not self.args.force:
       return 11
     cover = MP4Cover(self.cover_data, MP4Cover.FORMAT_JPEG)
     audio["covr"] = [cover]
-    if not self.config.dry_run:
+    if not self.args.dry_run:
       audio.save()
     return 0
 
-  def _process_file(self, file):
-    file_name = Path(file)
-    suffix = file_name.suffix
+  def process_file(self, file):
+    suffix = file.suffix
     if ".mp3" in suffix:
       return self._paint_id3(file)
     elif ".flac" in suffix:
@@ -104,63 +117,87 @@ class CoverPainter():
     else:
       return 2
 
-  def _process_directory(self, directory):
-    os.chdir(directory)
-    files = os.listdir()
+  def process_directory(self, path):
+    if self.args.recursive:
+      files = [file for file in path.walk()]
+    else:
+      files = [file for file in path.iterdir()]
 
-    for file in files:
-      file_name = Path(file)
-      print(f" ~ process ~ {os.path.abspath(file)}", end='\r')
-      if file_name.stem.startswith('.'):
-        sys.stdout.write("\r\033[K")
-        print(f" ~ skip/hidden ~ {os.path.abspath(file)}")
-        self.count_warn += 1
-        continue
+    if len(files) == 0:
+      self.progress_print(5, path)
+      return
 
-      if os.path.isdir(file):
-        sys.stdout.write("\r\033[K")
-        if self.config.recursive:
-          print(" ~ processing directory ~ ", os.path.abspath(file))
-          self._process_directory(file)
-          os.chdir("..")
-          continue
-  
-        print(" ~ skip/dir ~ ", os.path.abspath(file))
-        continue
-      
-      ret = self._process_file(file,)
-      sys.stdout.write("\r\033[K")
-      self._ret_print(ret, file)
+    # if only this path, files is a list of PosixPaths
+    # if recursive, files is a list of tuples
+
+    def do_files(paths):
+      for file in paths:
+        if file.is_file():
+          if file.suffix == '.lrc':
+            continue
+          ret = 1
+          try:
+            ret = self.process_file(file)
+          except Exception:
+            print(traceback.format_exc())
+          self.progress_print(ret, file)
+
+    if not self.args.recursive:
+      do_files(files)
+      self.print_stats()
+      return
+    
+    for walked_dir in files:
+      base_dir, _, file_list = walked_dir # type: ignore
+      new_file_list = []
+      for file in file_list:
+        f = Path(base_dir) / file
+        new_file_list.append(f)
+
+      do_files(new_file_list)
+
+    self.print_stats()
 
   def run(self,):
     if not self.args.path:
-      print("[error] did not specify target path.")
-      return -1
-    if not self.args.source_path:
-      print("[error] did not specify source path.")
+      if not self.args.silent:
+        print(" ~ error ~ did not specify target path.")
       return -1
     
-    if not os.path.exists(self.args.path):
-      print("[error] invalid target path.")
+    if not self.args.source:
+      if not self.args.silent:
+        print(" ~ error ~ did not specify source path.")
+      return -1
+    
+    target = Path(self.args.target)
+    self.source = Path(self.args.source)
+
+    if not target.exists():
+      if not self.args.silent:
+        print(" ~ error ~ invalid target path.")
       return 1
-    if not os.path.exists(self.args.source_path):
-      print("[error] invalid source path.")
+    
+    if not self.source.exists():
+      if not self.args.silent:
+        print(" ~ error ~ invalid source path.")
       return 1
 
-    self._convert_cover_file()
-    print(f"[cover] using cover file: {self.args.source_path} => .lyria_cover.tmp (JPEG)")
-
-    if os.path.isdir(self.args.path):
-      self._process_directory(self.args.path)
+    ret = self._convert_cover_file()
+    if ret == 1:
+      if not self.args.silent:
+        print(" ~ error ~ cannot convert cover file")
+      return ret
+    if not self.args.silent:
+      print(f" ~ using cover file: {self.source} => .lyria_cover.tmp (JPEG)")
+    
+    if target.is_file():
+      ret = self.process_file(target)
+      self.progress_print(ret, target)
     else:
-      file = self.args.path
-      print(f" ~ single file => {file} ", end='\r')
-      ret = self._process_file(file)
-      self._ret_print(ret, file)
-      
-    print(f"[cover] deleting temp file .lyria_cover.tmp")
-    if os.path.exists(".lyria_cover.tmp"):
-      os.remove(".lyria_cover.tmp")
-  
-    print(f"[lyria] done :3 \n painted - {self.count_painted}\n exist - {self.count_exist}\n warns - {self.count_warn}")
+      self.process_directory(target)
+
+    cover_path = Path(".lyria_cover.tmp")
+    if cover_path.exists():
+      cover_path.unlink()
+    
     return 0
