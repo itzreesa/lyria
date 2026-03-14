@@ -114,7 +114,7 @@ praser_organize.add_argument("--album-artist",
 parser_cover = subparsers.add_parser("cover", epilog=epilog)
 parser_cover.add_argument("source",
                     help="path to the cover image",
-                    default=".",
+                    default=None,
                     nargs="?",
                     type=str)
 parser_cover.add_argument("target",
