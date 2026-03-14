@@ -81,13 +81,9 @@ parser_lyrics.add_argument("--forget-time",
 praser_organize = subparsers.add_parser("organize", epilog=epilog)
 praser_organize.add_argument("source",
                     help="path, from where the files will be taken",
-                    default=".",
-                    nargs="?",
                     type=str)
 praser_organize.add_argument("target",
                     help="directory, where the files will be organized in",
-                    default=None,
-                    nargs="?",
                     type=str)
 praser_organize.add_argument("-d", "--dry-run",
                     help="parse files, without fetching lyrics",
@@ -114,13 +110,9 @@ praser_organize.add_argument("--album-artist",
 parser_cover = subparsers.add_parser("cover", epilog=epilog)
 parser_cover.add_argument("source",
                     help="path to the cover image",
-                    default=None,
-                    nargs="?",
                     type=str)
 parser_cover.add_argument("target",
                     help="file or directory of files to apply covers there",
-                    default=None,
-                    nargs="?",
                     type=str)
 parser_cover.add_argument("-f", "--force",
                     help="force overwrite image data if it exists already",
