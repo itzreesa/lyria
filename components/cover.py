@@ -159,16 +159,6 @@ class CoverPainter():
     self.print_stats()
 
   def run(self,):
-    if not self.args.path:
-      if not self.args.silent:
-        print(" ~ error ~ did not specify target path.")
-      return -1
-    
-    if not self.args.source:
-      if not self.args.silent:
-        print(" ~ error ~ did not specify source path.")
-      return -1
-    
     target = Path(self.args.target)
     self.source = Path(self.args.source)
 
