@@ -1,178 +1,257 @@
 from pathlib import Path
+import traceback
 import sys
-import os
 
-import requests
 import mutagen
+import requests
 
-from components.common import extract_tags
+from components.common import LYRIA_VERSION_FRIENDLY, extract_tags
 
 class LyricFetcher():
-  def __init__(self, config, args):
-    self.config = config
-    self.args = args
-    self.api_url = "https://lrclib.net/api/get?artist_name=$artist&track_name=$title"
+  def __init__(self, debug, silent):
+    self.API = "https://lrclib.net/api/"
+
+    self.possible_queries = [
+      [None, "get?artist_name=$artist&track_name=$title"],
+      [None, "search?artist_name=$artist&track_name=$title"],
+      ["album", "search?album_name=$album&track_name=$title"],
+      ["album", "get?album_name=$album&track_name=$title"],
+      ["albumartist", "get?album_name=$albumartist&track_name=$title"],
+    ]
+
+    self.silent = silent
+
+    suffix = ""
+    if debug:
+      suffix = "-dev"
     self.headers = requests.utils.default_headers()
-    self.count_downloaded = 0
-    self.count_exist = 0
-    self.count_warn = 0
-
-    self.count_total = 0
-    self.count_processed = 0
-    self._setup()
-
-  def _setup(self,):
     self.headers.update(
       {
-        'User-Agent': f"lyria {self.config._version_friendly} (https://github.com/itzreesa/lyria)"
+        'User-Agent': f"lyria {LYRIA_VERSION_FRIENDLY}{suffix} (https://github.com/itzreesa/lyria)"
       }
     )
 
-  def _ret_print(self, ret, file):
+  def fetch_lyrics(self, artist, title, album="", albumartist="") -> dict:
+    for query in self.possible_queries:
+      if query[0] == "album" and album == "":
+        continue
+      elif query[0] == "albumartist" and albumartist == "":
+        continue
+
+      q = query[1]
+      q = q.replace("$artist", artist)
+      q = q.replace("$title", title)
+      if album:
+        q = q.replace("$album", album)
+      if albumartist:
+        q = q.replace("$albumartist", albumartist)
+
+      q = q.replace(" ", "+")
+
+      response = requests.get(url=self.API+q, headers=self.headers)
+      if response.status_code == 200:
+        return response.json()
+    
+    if not self.silent:
+      print(f"[error] {response.status_code} on {artist} - {title}")
+    return {}
+
+class LyricComponent():
+  def __init__(self, args):
+    self.args = args
+
+    self.count_downloaded = 0
+    self.count_exist = 0
+    self.count_warn = 0
+    self.count_total = 0
+    self.count_processed = 0
+
+    self.fetcher = LyricFetcher(args.debug, args.silent)
+
+  def progress_print(self, ret, file: Path):
+    if self.args.silent:
+      return
     sys.stdout.write("\r\033[K")
+
+    if self.args.verbose:
+      file = file.absolute()
+
     match ret:
       case 0:
-        print(" ~ success ~ ", os.path.abspath(file))
+        print(" ~ success ~", file)
+      case 1:
+        print(" ~ fail ~ ", file)
 
       case 2:
-        print(" ~ fail/invalid ~ ", os.path.abspath(file))
+        if self.args.verbose:
+          print(" ~ fail/invalid ~", file)
       case 3:
-        print(" ~ fail/fetch ~ ", os.path.abspath(file))
+        print(" ~ fail/fetch ~", file)
+      case 4:
+        print(" ~ fail/fetch-blank ~", file)
+      case 5:
+        print(" ~ fail/empty ~", file)
 
       case 11:
-        print(" ~ skip/exists ~ ", os.path.abspath(file))
+        if self.args.verbose:
+          print(" ~ skip/exists ~", file)
       case 12:
-        print(" ~ skip/instrumental ~ ", os.path.abspath(file))
+        print(" ~ skip/instrumental ~", file)
       case 13:
-        print(" ~ skip/blank ~ ", os.path.abspath(file))
+        print(" ~ skip/blank ~", file)
+      
 
       case _:
-        print(" ~ fail ~ ", os.path.abspath(file))
+        print(" ~ fail ~ ", file)
 
-  def _fetch_lyrics(self, artist, title) -> dict:
-    request_url = self.api_url.replace("$artist", artist)
-    request_url = request_url.replace("$title", title)
-    request_url = request_url.replace(" ", "+")
-  
-    response = requests.get(url=request_url, headers=self.headers)
-    if response.status_code != 200:
-      print(f"[error] {response.status_code} on {artist} - {title}")
-      return {}
-  
-    return response.json()
-
-  def _write_lyrics(self, file_name, data) -> int:
+  def write_lyrics(self, path, data) -> int:
     lyrics = ""
-    if not data:
-      with open(f"{file_name}.lrc", 'w') as f:
+
+    # forget not found
+    if not data: 
+      with open(path, 'w') as f:
         f.write(lyrics)
       return 13
-    if data["instrumental"]:
-      # write blank file so we don't call the api too many times
-      with open(f"{file_name}.lrc", 'w') as f:
+    
+    if type(data) == list:
+      data = data[0]
+
+    # write a blank, like fnf
+    if data.get("instrumental", False):
+      with open(path, 'w') as f:
         f.write(lyrics)
       return 12
-
-    if data["syncedLyrics"]:
-      lyrics = data["syncedLyrics"]
-    elif data["plainLyrics"]:
-      lyrics = data["plainLyrics"]
-    else:
-      print(f"(?) No lyrics found for {file_name}")
-      if self.config.verbose:
-        print(f"\tdata => {data}")
-      return 1
-  
-    with open(f"{file_name}.lrc", 'w') as f:
+    
+    lyrics = data.get("syncedLyrics", False)
+    if not lyrics:
+      lyrics = data.get("plainLyrics", False)
+    if not lyrics:
+      return 4
+    
+    with open(path, 'w') as f:
       f.write(lyrics)
 
     return 0
 
-  def _process_file(self, file) -> int:
-    file_data = mutagen.File(file, easy=True)
+  def process_file(self, path: Path) -> int:
+    file_data = mutagen.File(path, easy=True)
     if not file_data:
       self.count_warn += 1
       return 2
     
-    artist, _, title = extract_tags(file_data, self.args)
-
-    file_name = Path(file)
-    if os.path.exists(f"{file_name.stem}.lrc"):
+    lrc_file_path = path.with_suffix(".lrc")
+    if lrc_file_path.exists():
       self.count_exist += 1
       return 11
     
-    if self.config.dry_run:
+    if self.args.dry_run:
       self.count_downloaded += 1
       return 0
-      
-    lyrics = self._fetch_lyrics(artist, title)
+    
+    album = file_data.tags.get('album', None)
+    artist = file_data.tags.get('artist', None)
+    albumartist = file_data.tags.get('albumartist', None)
+    title = file_data.tags.get('title', None)
+
+    if album:
+      album = album[0]
+    if albumartist:
+      albumartist = albumartist[0]
+
+    if title == None:
+      self.count_warn += 1
+      return 2
+    
+    lyrics = self.fetcher.fetch_lyrics(
+      artist=artist[0], 
+      title=title[0],
+      album=album,
+      albumartist=albumartist
+      )
+
     if not lyrics:
       self.count_warn += 1
       if self.args.forget_not_found:
-        self._write_lyrics(file_name.stem, None)
+        self.write_lyrics(lrc_file_path, None)
       return 3
-
-    ret = self._write_lyrics(file_name.stem, lyrics)
+    
+    ret = self.write_lyrics(lrc_file_path, lyrics)
     if ret != 0:
       self.count_warn += 1
       return ret
 
-    self.count_downloaded += 1
+    self.count_downloaded += 1  
+    
     return 0
 
-  def _process_directory(self, directory) -> tuple:
-    os.chdir(directory)
-    files = os.listdir()
+  def process_directory(self, path: Path):
+    #print([x for x in path.iterdir() if x.is_dir()])
+    if self.args.recursive:
+      files = [file for file in path.walk()]
+    else:
+      files = [file for file in path.iterdir()]
 
-    self.count_total += len(files)
+    if len(files) == 0:
+      self.progress_print(5, path)
+      return
 
-    for file in files:
-      file_name = Path(file)
-      self.count_processed = self.count_downloaded + self.count_exist + self.count_warn
-      sys.stdout.write("\r\033[K")
-      print(f" ~ {self.count_processed}/{self.count_total} ~ {os.path.abspath(file)}", end='\r')
-      if file_name.stem.startswith('.'):
-        if self.config.verbose:
-          sys.stdout.write("\r\033[K")
-          print(f" ~ skip/hidden ~ {os.path.abspath(file)}")
-        self.count_warn += 1
-        continue
+    # if only this path, files is a list of PosixPaths
+    # if recursive, files is a list of tuples
 
-      if ".lrc" in file_name.suffixes:
-        self.count_total -= 1
-        continue
+    def do_files(paths):
+      for file in paths:
+        if file.is_file():
+          if file.suffix == '.lrc':
+            continue
+          ret = 1
+          try:
+            ret = self.process_file(file)
+          except Exception:
+            print(traceback.format_exc())
+          self.progress_print(ret, file)
 
-      if os.path.isdir(file):
-        if self.config.verbose:
-          sys.stdout.write("\r\033[K")
-        if self.config.recursive:
-          if self.config.verbose:
-            print(" ~ processing directory ~ ", os.path.abspath(file))
-          self._process_directory(file)
-          os.chdir("..")
-          continue
-        
-        if self.config.verbose:
-          print(" ~ skip/dir ~ ", os.path.abspath(file))
-        continue
-      
-      ret = self._process_file(file,)
-      if self.config.verbose:
-        sys.stdout.write("\r\033[K")
-        self._ret_print(ret, file)
+    if not self.args.recursive:
+      do_files(files)
+      if not self.args.silent:
+        self.count_total = self.count_downloaded + self.count_exist + self.count_warn
+        # stats
+        print("\n== stats")
+        print(f" ~ downloaded: {self.count_downloaded}")
+        print(f" ~ exist: {self.count_exist}")
+        print(f" ~ warn: {self.count_warn}")
+        print(f" ~~ total: {self.count_total}")
+      return
+    
+    for walked_dir in files:
+      base_dir, _, file_list = walked_dir # type: ignore
+      new_file_list = []
+      for file in file_list:
+        f = Path(base_dir) / file
+        new_file_list.append(f)
+
+      do_files(new_file_list)
+
+    if not self.args.silent:
+      self.count_total = self.count_downloaded + self.count_exist + self.count_warn
+      # stats
+      print("\n== stats")
+      print(f" ~ downloaded: {self.count_downloaded}")
+      print(f" ~ exist: {self.count_exist}")
+      print(f" ~ warn: {self.count_warn}")
+      print(f" ~~ total: {self.count_total}")
 
   def run(self,) -> int:
-    if os.path.isdir(self.args.path):
-      self._process_directory(self.args.path)
+    work_path = Path(self.args.path)
+    
+    if not work_path.exists():
+      if not self.args.silent:
+        print(" & invalid path")
+        return 1
+
+    if work_path.is_file():
+      ret = self.process_file(work_path)
+      self.progress_print(ret, work_path)
     else:
-      file = self.args.path
-      path = os.path.dirname(os.path.realpath(file))
-      os.chdir(path)
-      file = os.path.basename(file)
-      print(f" ~ single file => {file} ", end='\r')
-      ret = self._process_file(file,)
-      self._ret_print(ret, file)
-        
-    sys.stdout.write("\r\033[K")
-    print(f"[lyria] done :3 \n downloaded - {self.count_downloaded}\n exist - {self.count_exist}\n warns - {self.count_warn}")
+      self.process_directory(work_path)
+
     return 0
