@@ -9,6 +9,8 @@ from mutagen.flac import FLAC, Picture
 from mutagen.id3 import ID3
 from PIL import Image
 
+from components.common import progress_print
+
 # stolen from stackoverflow muhehehe
 MODE_TO_BPP = {'1':1, 'L':8, 'P':8, 'RGB':24, 'RGBA':32, 'CMYK':32, 'YCbCr':24, 'I':32, 'F':32}
 
@@ -25,20 +27,6 @@ class CoverPainter():
     self.cover_depth = None
 
     self.source = None
-
-  def progress_print(self, ret, file: Path):
-    if self.args.silent:
-      return
-    sys.stdout.write("\r\033[K")
-    match ret:
-      case 0:
-        print(" ~ success ~", file)
-      case 2:
-        print(" ~ fail/unsupported ~", file)
-      case 11:
-        print(" ~ skip/exists ~", file)
-      case _:
-        print(" ~ fail ~", file)
 
   def print_stats(self,):
     if not self.args.silent:
@@ -115,7 +103,7 @@ class CoverPainter():
     elif ".m4a" in suffix:
       return self._paint_mp4(file)
     else:
-      return 2
+      return 7
 
   def process_directory(self, path):
     if self.args.recursive:
@@ -124,7 +112,7 @@ class CoverPainter():
       files = [file for file in path.iterdir()]
 
     if len(files) == 0:
-      self.progress_print(5, path)
+      progress_print(self.args, 5, path)
       return
 
     # if only this path, files is a list of PosixPaths
@@ -140,7 +128,7 @@ class CoverPainter():
             ret = self.process_file(file)
           except Exception:
             print(traceback.format_exc())
-          self.progress_print(ret, file)
+          progress_print(self.args, ret, file)
 
     if not self.args.recursive:
       do_files(files)
@@ -182,7 +170,7 @@ class CoverPainter():
     
     if target.is_file():
       ret = self.process_file(target)
-      self.progress_print(ret, target)
+      progress_print(self.args, ret, target)
     else:
       self.process_directory(target)
 
