@@ -1,18 +1,21 @@
 lyria's "lyrics" component.
 
-Usage: `lyria lyrics [path] [-r|--recursive] [--dry-run] [--forget-not-found] [--artist=<artist>]`
-Alternative: `lyria` same as `lyria lyrics .`
+Usage: `lyria lyrics [path] [-r|--recursive] [-d|--dry-run] [-n|--forget-not-found] [--forget-time]`
+Just typing `lyria` in the terminal will result in the same as using `lyria lyrics .`
 
 Scans selected [path], defaults to the current directory, for music files.
 If used [-r|--recursive], also scans sub-directories.
 
-Then fetches synced lyrics, and writes it to the same path as file, with .lrc extension
-If synced lyrics can't be found, lyria will try to write normal lyrics, 
+For every music file, lyria tries to find synced lyrics, and writes it to the same path as file, with .lrc extension
+If synced lyrics can't be found, lyria will try to get normal lyrics, 
   and if those can't be found, it'll move on with a warning.
 
-You can specify [--dry-run] to to only parse files without fetching lyrics.
+You can specify [-d|--dry-run] to to only parse files without fetching lyrics.
 
-If you specify [--forget-not-found], lyria will write an empty .lrc file,
-  for every file lyrics can't be found for
+If you specify [-n|--forget-not-found], lyria will write an empty .lrc file,
+  for every file lyrics can't be found for.
 
-You can also override `artist` tag with `--artist=<artist>`
+== Planned feature(s):
+
+If [--forget-time] parameter is provided (in hours), lyria will check the date creation of the empty .lrc files,
+  if above --forget-time, lyria will try to fetch the lyrics for the song again.

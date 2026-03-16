@@ -1,24 +1,24 @@
 lyria's "organizer" component.
 
-Usage: `lyria organize [target] [source] [--dry-run] [--artist=<artist>] [--albun=<album>]`
+Usage: `lyria organize [source] [target] [-d|--dry-run] [-a|--prefer-album-artist] [--artist=<artist>] [--albun=<album>] [--album-artist=<album artist>]`
 
-Iterates through every music file in [source] and reorganizes it in [target].
-The structure will look something like that:
-  Artist/Album/Disc-Track Title.Extension
+Uses files from [source] to move them, organized into [target]
+By default, the structure looks like that:
+ AlbumArtist/Album/Disc-Track Title.Extension
 For example:
   Ado/Kyougen/01-11 Usseewa.mp3
 
-Songs without the album tag, will be placed in:
-  Artist/Disc-Track Title.Extension
+Songs without the album tag or detected singles will be placed in:
+  AlbumArtist/Disc-Track Title.Extension
 
 Songs without disc or track number will be renamed to only contain the title:
-  Artist/Album/Title.Extension
+  AlbumArtist/Album/Title.Extension
 
-Songs without Artist tag will not be processed.
+lyria uses album artist instead of the artist tag to prevent multiple directories with only one file in their roots.
+You can still use the normal artist tag by setting `prefer_album_artist` to False.
 
-Source folder will not be iterated recursively, even if [-r|--recursive] is specified.
-You shuold put all songs in root of the source directory.
+Songs you wish to organize need to be in the root of the [source].
 
-You can specify [--dry-run] to to only parse files without moving them.
+You can specify [-d|--dry-run] to to only parse files without moving them.
 
-You can also override `artist` and `album` tag with `--artist=<artist>` and `--album=<album>`
+You can also override `artist`, `album` and `albumartist` tasg with `--artist=<artist>`, `--album=<album>` `--album-artist=<album artist>`
