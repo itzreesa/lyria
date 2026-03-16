@@ -22,7 +22,7 @@ def install_requirements():
   subprocess.check_call([os.path.join(venv_path, 'bin', 'pip'), 'install', '--upgrade', '-r', req_file])
   
   print("[ ok! ] updating venv.")
-  print("~ lyria is now ready to use!")
+  
 
 def enter_venv():
   base_path = os.path.dirname(os.path.realpath(__file__))
@@ -119,9 +119,9 @@ def _update_lyria():
     _chmod(os.path.join(LYRIA_DIR, "lyria.py"))
     _relink(os.path.join(LYRIA_DIR, "lyria.py"), os.path.join(BIN_DIR, "lyria"))
 
-  install_requirements()
+  print("~ lyria was updated!")
 
-  print(f"~ lyria was updated!")
+  print("~ lyria is now ready to use!")
 
 def update_lyria():
   base_path = os.path.dirname(os.path.realpath(__file__))
@@ -140,6 +140,7 @@ if len(sys.argv) > 1:
     exit(0)
   elif sys.argv[1] == "update":
     update_lyria()
+    install_requirements()
     exit(0)
 
 if __name__ == "__main__":
