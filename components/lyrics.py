@@ -1,10 +1,11 @@
 from pathlib import Path
 import traceback
 import time
-import sys
 
 import mutagen
 import requests
+
+from tqdm import tqdm
 
 from components.common import LYRIA_VERSION_FRIENDLY, Color, progress_print
 
@@ -188,7 +189,10 @@ class LyricComponent():
     # if recursive, files is a list of tuples
 
     def do_files(paths):
-      for file in paths:
+      for file in tqdm(
+        paths,
+        bar_format="{percentage:3.0f}% | {bar} | e: {elapsed}s"
+        ):
         if file.is_file():
           if file.suffix == '.lrc':
             continue
@@ -200,18 +204,23 @@ class LyricComponent():
           progress_print(self.args, ret, file)
 
     if not self.args.recursive:
+      for f in files:
+        if f.suffix == ".lrc" or f.is_dir():
+          files.remove(f)
       do_files(files)
       self.print_stats()
       return
-    
+
+    new_file_list = []
     for walked_dir in files:
       base_dir, _, file_list = walked_dir # type: ignore
-      new_file_list = []
       for file in file_list:
         f = Path(base_dir) / file
+        if f.suffix == ".lrc":
+          continue
         new_file_list.append(f)
 
-      do_files(new_file_list)
+    do_files(new_file_list)
 
     self.print_stats()
 
