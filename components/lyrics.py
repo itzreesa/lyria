@@ -6,7 +6,7 @@ import sys
 import mutagen
 import requests
 
-from components.common import LYRIA_VERSION_FRIENDLY
+from components.common import LYRIA_VERSION_FRIENDLY, Color, progress_print
 
 class LyricFetcher():
   def __init__(self, debug, silent):
@@ -69,50 +69,14 @@ class LyricComponent():
 
     self.fetcher = LyricFetcher(args.debug, args.silent)
 
-  def progress_print(self, ret, file: Path):
-    if self.args.silent:
-      return
-    sys.stdout.write("\r\033[K")
-
-    if self.args.verbose:
-      file = file.absolute()
-
-    match ret:
-      case 0:
-        print(" ~ success ~", file)
-      case 1:
-        print(" ~ fail ~", file)
-
-      case 2:
-        if self.args.verbose:
-          print(" ~ fail/invalid ~", file)
-      case 3:
-        print(" ~ fail/fetch ~", file)
-      case 4:
-        print(" ~ fail/fetch-blank ~", file)
-      case 5:
-        print(" ~ fail/empty ~", file)
-
-      case 11:
-        if self.args.verbose:
-          print(" ~ skip/exists ~", file)
-      case 12:
-        print(" ~ skip/instrumental ~", file)
-      case 13:
-        print(" ~ skip/blank ~", file)
-      
-
-      case _:
-        print(" ~ fail ~", file)
-
   def print_stats(self,):
     if not self.args.silent:
       self.count_total = self.count_downloaded + self.count_exist + self.count_warn
-      print("\n== stats")
-      print(f" ~ downloaded: {self.count_downloaded}")
-      print(f" ~ exist: {self.count_exist}")
-      print(f" ~ warn: {self.count_warn}")
-      print(f" ~~ total: {self.count_total}")
+      print(f"\n{Color.BOLD}== stats{Color.RESET}")
+      print(f"{Color.BOLD} ~ downloaded: {Color.SUCCESS}{self.count_downloaded}{Color.RESET}")
+      print(f"{Color.BOLD} ~ exist: {Color.SUCCESS}{self.count_exist}{Color.RESET}")
+      print(f"{Color.BOLD} ~ warn: {Color.WARN}{self.count_warn}{Color.RESET}")
+      print(f"{Color.BOLD} ~~ total: {Color.STATS}{self.count_total}{Color.RESET}")
 
   def write_lyrics(self, path, data) -> int:
     lyrics = ""
@@ -217,7 +181,7 @@ class LyricComponent():
       files = [file for file in path.iterdir()]
 
     if len(files) == 0:
-      self.progress_print(5, path)
+      progress_print(self.args, 5, path)
       return
 
     # if only this path, files is a list of PosixPaths
@@ -233,7 +197,7 @@ class LyricComponent():
             ret = self.process_file(file)
           except Exception:
             print(traceback.format_exc())
-          self.progress_print(ret, file)
+          progress_print(self.args, ret, file)
 
     if not self.args.recursive:
       do_files(files)
@@ -261,7 +225,7 @@ class LyricComponent():
 
     if work_path.is_file():
       ret = self.process_file(work_path)
-      self.progress_print(ret, work_path)
+      progress_print(self.args, ret, work_path)
     else:
       self.process_directory(work_path)
 

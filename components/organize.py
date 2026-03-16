@@ -4,7 +4,7 @@ import sys
 
 import mutagen
 
-from components.common import LYRIA_VERSION_FRIENDLY
+from components.common import LYRIA_VERSION_FRIENDLY, progress_print
 
 class SongOrganizer():
   def __init__(self, args):
@@ -14,34 +14,6 @@ class SongOrganizer():
 
     self.count_moved = 0
     self.count_warn = 0
-
-  def progress_print(self, ret, file: Path):
-    if self.args.silent:
-      return
-    sys.stdout.write("\r\033[K")
-
-    if self.args.verbose:
-      file = file.absolute()
-
-    match ret:
-      case 0:
-        print(" ~ success ~", file)
-      case 1:
-        print(" ~ fail ~", file)
-
-      case 2:
-        if self.args.verbose:
-          print(" ~ fail/invalid ~", file)
-      case 6:
-        if self.args.verbose:
-          print(" ~ fail/move ~", file)
-
-      case 11:
-        if self.args.verbose:
-          print(" ~ skip/exists ~", file)
-
-      case _:
-        print(" ~ fail ~", file)
 
   def print_stats(self,):
     if not self.args.silent:
@@ -132,7 +104,7 @@ class SongOrganizer():
     for file in files:
       file_data = mutagen.File(file, easy=True) # type: ignore
       if not file_data:
-        self.progress_print(2, file)
+        progress_print(self.args, 2, file)
         continue
       
       try:
@@ -140,7 +112,7 @@ class SongOrganizer():
       except Exception:
         print(traceback.format_exc())
       if not new_path:
-        self.progress_print(1, file)
+        progress_print(self.args, 1, file)
         continue
 
       if not self.args.dry_run:
@@ -148,7 +120,7 @@ class SongOrganizer():
           file.move(new_path)
         except Exception:
           print(traceback.format_exc())
-          self.progress_print(6, file)
+          progress_print(self.args, 6, file)
 
       if not self.args.silent:
         print(f" ~ {file} => {new_path}")
