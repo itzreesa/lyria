@@ -47,7 +47,7 @@ subparsers = parser.add_subparsers(
   required=False
 )
 
-parser.set_defaults(component="lyrics", path=".", recursive=False, dry_run=False, forget_not_found=False)
+parser.set_defaults(component="lyrics", path=".", recursive=False, dry_run=False, forget_not_found=False, forget_time=None)
 
 # lyrics
 parser_lyrics = subparsers.add_parser("lyrics", epilog=epilog)

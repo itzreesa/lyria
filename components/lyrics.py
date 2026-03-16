@@ -1,5 +1,6 @@
 from pathlib import Path
 import traceback
+import time
 import sys
 
 import mutagen
@@ -150,8 +151,23 @@ class LyricComponent():
     
     lrc_file_path = path.with_suffix(".lrc")
     if lrc_file_path.exists():
-      self.count_exist += 1
-      return 11
+      if not self.args.forget_time:
+        self.count_exist += 1
+        return 11
+      lrc_file_stat = lrc_file_path.lstat()
+      if lrc_file_stat.st_size == 0:
+        c_hour = time.time() // 3600
+        f_hour = lrc_file_stat.st_ctime // 3600
+        hours_passed = c_hour - f_hour
+        # such a greatly designed control flow, right?
+        if hours_passed >= self.args.forget_time:
+          lrc_file_path.unlink()
+        else:
+          self.count_exist += 1
+          return 11
+      else:
+        self.count_exist += 1
+        return 11
     
     if self.args.dry_run:
       self.count_downloaded += 1

@@ -15,7 +15,5 @@ You can specify [-d|--dry-run] to to only parse files without fetching lyrics.
 If you specify [-n|--forget-not-found], lyria will write an empty .lrc file,
   for every file lyrics can't be found for.
 
-== Planned feature(s):
-
 If [--forget-time] parameter is provided (in hours), lyria will check the date creation of the empty .lrc files,
   if above --forget-time, lyria will try to fetch the lyrics for the song again.
