@@ -2,7 +2,7 @@ from pathlib import Path
 import traceback
 import sys
 
-from mutagen.id3 import APIC, PictureType
+from mutagen.id3 import APIC, PictureType # type: ignore
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4, MP4Cover
 from mutagen.flac import FLAC, Picture
@@ -40,7 +40,7 @@ class CoverPainter():
   def _convert_cover_file(self,) -> int:
     img = None
     try:
-      img = Image.open(self.source)
+      img = Image.open(self.source) # type: ignore
     except Exception as e:
       print(f"[error] can't open file: {e}")
       print(traceback.format_exc())
@@ -50,16 +50,17 @@ class CoverPainter():
       img.save(".lyria_cover.tmp", "JPEG")
     except Exception as e:
       print(f"[error] can't convert file: {e}")
-    self.cover_data = open(self.source, 'rb').read()
+    self.cover_data = open(self.source, 'rb').read() # type: ignore
     self.cover_width, self.cover_height = img.size
     self.cover_depth = MODE_TO_BPP[img.mode]
+    return 0
 
   def _paint_id3(self, file):
     audio = MP3(file)
-    if audio.tags.getall("APIC") and not self.args.force:
+    if audio.tags.getall("APIC") and not self.args.force: # type: ignore
       return 11
-    audio.tags.delall("APIC")
-    audio.tags.add(
+    audio.tags.delall("APIC") # type: ignore
+    audio.tags.add( # type: ignore
       APIC(3, 'image/jpeg', 3, "Cover", self.cover_data)
     )
     if not self.args.dry_run:
@@ -86,7 +87,7 @@ class CoverPainter():
 
   def _paint_mp4(self, file):
     audio = MP4(file)
-    if "covr" in audio.tags and not self.args.force:
+    if "covr" in audio.tags and not self.args.force: # type: ignore
       return 11
     cover = MP4Cover(self.cover_data, MP4Cover.FORMAT_JPEG)
     audio["covr"] = [cover]

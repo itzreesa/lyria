@@ -205,8 +205,8 @@ class LyricComponent():
 
     if not self.args.recursive:
       for f in files:
-        if f.suffix == ".lrc" or f.is_dir():
-          files.remove(f)
+        if f.suffix == ".lrc" or f.is_dir(): # type: ignore
+          files.remove(f) # type: ignore
       do_files(files)
       self.print_stats()
       return
