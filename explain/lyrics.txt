@@ -17,3 +17,7 @@ If you specify [-n|--forget-not-found], lyria will write an empty .lrc file,
 
 If [--forget-time] parameter is provided (in hours), lyria will check the date creation of the empty .lrc files,
   if above --forget-time, lyria will try to fetch the lyrics for the song again.
+
+Configuration file:
+ - forget_not_found - boolean: [True, False], default: False - controls the --forget-not-found option
+ - forget_time - integer, default: 0 - controls the --forget-time option

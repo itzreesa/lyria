@@ -61,6 +61,7 @@ class LyricFetcher():
 class LyricComponent():
   def __init__(self, args):
     self.args = args
+    #self.config = config
 
     self.count_downloaded = 0
     self.count_exist = 0
@@ -226,7 +227,7 @@ class LyricComponent():
 
   def run(self,) -> int:
     work_path = Path(self.args.path)
-    
+
     if not work_path.exists():
       if not self.args.silent:
         print(" ~ error ~ invalid path")

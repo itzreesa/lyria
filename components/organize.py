@@ -7,8 +7,10 @@ import mutagen
 from components.common import LYRIA_VERSION_FRIENDLY, progress_print
 
 class SongOrganizer():
-  def __init__(self, args):
+  def __init__(self, args, config):
     self.args = args
+    self.config = config
+
     self.source = Path(self.args.source)
     self.target = Path(self.args.target)
 
@@ -62,20 +64,38 @@ class SongOrganizer():
     # second part
     new_path = Path(self.target)
 
-    if self.args.prefer_album_artist and album_artist:
-      new_path = new_path / album_artist
-    else:
-      new_path = new_path / artist
+    directory_template = self.config.organize_template_directory
+    if not directory_template or directory_template.replace(" ", "") == "":
+      directory_template = "$artist/$album"
 
-    if not is_single and album:
-      new_path = new_path / album
+    if self.args.prefer_album_artist and album_artist:
+      directory_template = directory_template.replace("$artist", album_artist)
+    else:
+      directory_template = directory_template.replace("$artist", artist)
+
+    if not is_single and album and not self.config.organize_dummy_album:
+      directory_template = directory_template.replace("$album", album)
+    elif not album and self.config.organize_dummy_album:
+      directory_template = directory_template.replace("$album", self.config.organize_dummy_album)
+    else:
+      directory_template = directory_template.replace("$album", "")
+
+    if disc_number:
+      directory_template = directory_template.replace("$discnumber", str(disc_number[0]))
+    else:
+      directory_template = directory_template.replace("$discnumber", "")
+      
+
+    new_path = new_path.joinpath(directory_template)
 
     if not self.args.dry_run:
       new_path.mkdir(parents=True, exist_ok=True)
 
     # third part
     # TODO: make it customizable in a config file
-    file_name_template = "$disc$title$extension"
+    file_name_template = self.config.organize_template_file
+    if not file_name_template or file_name_template.replace(" ", "") == "":
+      file_name_template = "$disc$title$extension"
 
     nums = ""
     if disc_number and track_number and not is_single:
@@ -88,11 +108,20 @@ class SongOrganizer():
     file_name = file_name.replace("$disc", nums)
     file_name = file_name.replace("$title", title)
     if artist:
-      file_name = file_name.replace("$artist", artist)
+      if self.config.organize_prefer_album_artist:
+        file_name = file_name.replace("$albumartist", album_artist)
+      else:
+        file_name = file_name.replace("$artist", artist)
     if album:
       file_name = file_name.replace("$album", album)
+    else:
+      file_name = file_name.replace("$album", "")
     if album_artist:
       file_name = file_name.replace("$albumartist", album_artist)
+    elif not album_artist and artist: 
+      file_name = file_name.replace("$albumartist", artist)
+    else:
+      file_name = file_name.replace("$albumartist", "")
     file_name = file_name.replace("$extension", extension)
 
     new_path = new_path / file_name
@@ -134,7 +163,7 @@ class SongOrganizer():
       if not self.args.silent:
         print(" ~ error ~ invalid target path")
       return
-    
+        
     self.organize()
 
     self.print_stats()

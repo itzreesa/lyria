@@ -21,4 +21,19 @@ Songs you wish to organize need to be in the root of the [source].
 
 You can specify [-d|--dry-run] to to only parse files without moving them.
 
-You can also override `artist`, `album` and `albumartist` tasg with `--artist=<artist>`, `--album=<album>` `--album-artist=<album artist>`
+You can also override `artist`, `album` and `albumartist` tags with `--artist=<artist>`, `--album=<album>` `--album-artist=<album artist>`
+
+Configuration file:
+ - forget_not_found - boolean: [True, False], default: False - controls the --forget-not-found option
+ - prefer_album_artist - boolean: [True, False], default: True - controls the --preferm-album-artist option
+ - template_directory - string, default: "$artist/$album/" - the template path for folders path, album will be blanked if no album is provided
+   - available variables: $artist, $album, $discnumber
+ - template_file: string, default: "$disc$title$extension" - the template path for file name.
+   available variables: 
+   - $disc - resolving to discnumber-tracknumber and a space, 
+   - $title, 
+   - $artist - which gets resolved into album artist if prefer_album_artist is enabled, 
+   - $album - blanked if none,
+   - $albumartist - which gets resolved into artist if no albumartist tag is present and artist is, else nothing, 
+   - $extension
+ - dummy_album - string - if a track is deemed single, for example by not having any album, or the album having the same name as track title or the album having "single" in it's name, the album name can be forced into the value here.

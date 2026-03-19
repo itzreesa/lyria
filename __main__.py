@@ -10,8 +10,12 @@ import argparse
 
 from components.common import LYRIA_VERSION_FRIENDLY
 
-epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (https://github.com/itzreesa/lyria)"
+from util.config import LyriaConfig
 
+config = LyriaConfig()
+config.load_config()
+
+epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (https://github.com/itzreesa/lyria)"
 
 parser = argparse.ArgumentParser(
   prog="lyria",
@@ -77,39 +81,48 @@ parser_lyrics.add_argument("--forget-time",
                     nargs="?",
                     type=int)
 
+parser_lyrics.set_defaults(
+  forget_not_found = config.lyrics_forget_not_found,
+  forget_time = config.lyrics_forget_time
+)
+
 # organize
-praser_organize = subparsers.add_parser("organize", epilog=epilog)
-praser_organize.add_argument("source",
+parser_organize = subparsers.add_parser("organize", epilog=epilog)
+parser_organize.add_argument("source",
                     help="path, from where the files will be taken",
                     type=str)
-praser_organize.add_argument("target",
+parser_organize.add_argument("target",
                     help="directory, where the files will be organized in",
                     type=str)
-praser_organize.add_argument("-d", "--dry-run",
+parser_organize.add_argument("-d", "--dry-run",
                     help="parse files, without fetching lyrics",
                     action="store_true",
                     default=False,
                     required=False)
-praser_organize.add_argument("-a", "--prefer-album-artist",
+parser_organize.add_argument("-a", "--prefer-album-artist",
                     help="use album artist instead of artist for organizing, defaults to true",
                     action="store_true",
                     default=True,
                     required=False)
-praser_organize.add_argument("--artist",
+parser_organize.add_argument("--artist",
                     help="override artist name",
                     nargs="?",
                     default=None,
                     required=False)
-praser_organize.add_argument("--album",
+parser_organize.add_argument("--album",
                     help="override album name",
                     nargs="?",
                     default=None,
                     required=False)
-praser_organize.add_argument("--album-artist",
+parser_organize.add_argument("--album-artist",
                     help="override album artist name",
                     nargs="?",
                     default=None,
                     required=False)
+
+parser_organize.set_defaults(
+  prefer_album_artist = config.organize_prefer_album_artist
+)
 
 # cover
 parser_cover = subparsers.add_parser("cover", epilog=epilog)
@@ -143,6 +156,7 @@ parser_explain.add_argument("explain",
 
 def main():
   args = parser.parse_args()
+
   if args.debug:
     print("~ dbg: ", args)
 
@@ -151,7 +165,7 @@ def main():
     case "lyrics":
       component = LyricComponent(args)
     case "organize":
-      component = SongOrganizer(args)
+      component = SongOrganizer(args, config)
     case "cover":
       component = CoverPainter(args)
     case "explain":
