@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-from components.lyrics import LyricComponent
-from components.organize import SongOrganizer
-from components.cover import CoverPainter
+from lyria.components.lyrics import LyricComponent
+from lyria.components.organize import SongOrganizer
+from lyria.components.cover import CoverPainter
 
-from explain import LyriaExplain
+from lyria.explain import LyriaExplain
 
 import argparse
 
-from components.common import LYRIA_VERSION_FRIENDLY
+from lyria.components.common import LYRIA_VERSION_FRIENDLY
 
-from util.config import LyriaConfig
+from lyria.util.config import LyriaConfig
 
 config = LyriaConfig()
 config.load_config()

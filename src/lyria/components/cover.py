@@ -9,7 +9,7 @@ from mutagen.flac import FLAC, Picture
 from mutagen.id3 import ID3
 from PIL import Image
 
-from components.common import progress_print
+from lyria.components.common import progress_print
 
 # stolen from stackoverflow muhehehe
 MODE_TO_BPP = {'1':1, 'L':8, 'P':8, 'RGB':24, 'RGBA':32, 'CMYK':32, 'YCbCr':24, 'I':32, 'F':32}

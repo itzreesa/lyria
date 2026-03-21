@@ -7,7 +7,7 @@ import requests
 
 from tqdm import tqdm
 
-from components.common import LYRIA_VERSION_FRIENDLY, Color, progress_print
+from lyria.components.common import LYRIA_VERSION_FRIENDLY, Color, progress_print
 
 class LyricFetcher():
   def __init__(self, debug, silent):

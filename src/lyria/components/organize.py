@@ -4,7 +4,7 @@ import sys
 
 import mutagen
 
-from components.common import LYRIA_VERSION_FRIENDLY, progress_print
+from lyria.components.common import LYRIA_VERSION_FRIENDLY, progress_print
 
 class SongOrganizer():
   def __init__(self, args, config):

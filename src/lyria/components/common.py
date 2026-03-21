@@ -1,11 +1,9 @@
 from pathlib import Path
 import sys
 
-LYRIA_VERSION_MAJOR = 1
-LYRIA_VERSION_MINOR = 3
-LYRIA_VERSION_PATCH = 2
+import importlib.metadata
 
-LYRIA_VERSION_FRIENDLY = f"{LYRIA_VERSION_MAJOR}.{LYRIA_VERSION_MINOR}.{LYRIA_VERSION_PATCH}"
+LYRIA_VERSION_FRIENDLY = importlib.metadata.version('lyria')
 
 class Color:
   RESET='\033[1;0m'
