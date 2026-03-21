@@ -1,7 +1,7 @@
 
-<h1 align="center">lyria</h1>
+<p style="font-size: 2.6rem;font-weight:600;" align="center">☆:｡✱*. lyria ｡*✱.:｡</p>
 <p align="center">
-<strong>your new song manager</strong>
+your music organizer
 </br>
 </br>
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/itzreesa/lyria?style=flat-square&color=faa">
@@ -11,79 +11,57 @@
 <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/itzreesa/lyria?style=flat-square&labelColor=4B8BBE&color=FFE873">
 <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/t/itzreesa/lyria?style=flat-square&color=bfb">
 <img alt="Static Badge" src="https://img.shields.io/badge/made%20with-%3A3-d26?style=flat-square">
+</br>
 </p>
 
-#
-
 ### Quickstart
-On *Linux* and *macOS*, type this into your terminal.
+Use [**pipx**](https://pipx.pypa.io/stable/) to install lyria.  
 ```bash
-curl https://reesa.cc/lyria | sh
+pipx install lyria
 ```
-**lyria** will be installed into `~/.local/share/lyria` and linked to `~/.local/bin`.  
-Make sure it's in your `PATH`. And you have python installed.
+**pipx** manages a virtual environment automatically, so you don't need to worry about conflicting packages and their versions.  
 
-#### Install manually (and windows)
-Prepare folders `~/.local/share/lyria` and `~/.local/bin`  
-
-**[Download](https://github.com/itzreesa/lyria/tarball/main)** the tarball from main branch or get the latest **[release](https://github.com/itzreesa/lyria/releases/latest)**
-
-Unpack the tarball to `~/.local/share/lyria`
-
-Make sure it's executable (windows doesn't need it)
-```bash
-chmod +x lyria.py
-```
-Link the executable (idk if it'll work on windows):
-```bash
-ln -sf "$HOME/.local/share/lyria/lyria.py" "$HOME/.local/bin/lyria"
-```
-If you haven't already, add `~/.local/bin` to your `PATH`!
-```bash
-# for bash
-echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
-
-# for zsh
-echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.zshrc
-```
-
-Now, run `lyria` once to set up the venv and you'll be good to go!  
-If there's a new version available, run this to update:
-```bash lyria
-lyria update
-```
-
-#
+# 
 ### Usage
-lyria is split into *components*, explanation for them can be viewed using
-```bash
-lyria -e <component>
-```
-or you can see the text files in **[this](./explain/)** directory.
-
-**Below you can find a few examples,   
-but I strongly recommend checking out the docs, so you can use *lyria* for what you actually need it for.**
-
-#### lyric grabbing
-Fetch lyrics for all files in the current directory.  
-The minimal example.
+The most basic thing you can use, is fetching lyrics for every file in the current working directory (non-recursively).  
 ```bash
 lyria
 ```
 
+lyria is split into *components*, explanation for them can be viewed using
+```bash
+lyria explain <component>
+```
+or you can view the text files in **[the explain](./src/lyria/explain/)** directory.
+
+Below you can find a few examples,   
+but I strongly recommend checking out the docs, so you can use *lyria* for what you actually need it for.
+
+#### lyric grabbing
 Fetch lyrics for folder `Music/` recursively.  
-And for every song that you can't find lyrics for, create an empty file to skip it on next use.
+And for every song that you **can't find lyrics for**, create an **empty `.lrc` file** to skip it on the next run.
 ```bash
 lyria lyrics Music/ -r --forget-not-found
 ```
 
+Fetch lyrics in the current folder, recursively, **create a blank `.lrc` file** for every song, the lyrics **cannot be found for**, and **delete** the empty `.lrc` files, **older than 168h** (1 week).
+```bash
+lyria lyrics -r -n --forget-time=168
+```
+
 #### music organization
 Get all the songs from folder `Import/` and organize them into the folder `Music/`.  
-Force artist name to be "Mozart`.  
-Perform a dry run, do not actually move files.
+Perform a **dry run**, do not actually move files.
 ```bash
-lyria organize Music/ Import/ --artist="Mozart" --dry-run
+lyria organize Import/ Music/ --dry-run
 ```
+
+#
+### Conifguration
+The config file should be located in `.config/lyria/config.ini`, on *nix systems.  
+On win\*ows, it should be in `C:\Users\<User>\AppData\Local\lyria\config.ini`
+
+Check the explanation files (`lyria explain <component>`), for the options inside the config files
 
 # 
 ### Issues
@@ -92,7 +70,6 @@ If you're having an issue, or you have a proposal for a feature, please use the 
 # 
 ### License
 `lyria`'s source code is licensed under the MIT license. [here](./LICENSE)
-
 <br></br>
-# 
+#
 ###### thanks for reading me! ~readme file

@@ -1,0 +1,10 @@
+lyria's "cover" component.
+
+Usage: `lyria cover [cover] [target] [-r|--recursive] [-d|--dry-run] [-f|--force]`
+
+Sets [cover], an image file as a cover for [target] - which can be either a single file or a directory.
+If used [-r|--recursive], while [target] is a directory, also scans sub-directories to set the covers.
+
+If there already is a cover, it will not replace it unless [-f|--force] is specified.
+
+You can pass [-d|--dry-run] to only see what it would do, without applying changes.

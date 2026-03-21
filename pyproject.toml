@@ -1,0 +1,30 @@
+[project]
+name = "lyria"
+version = "2.0.0"
+description = "your music organizer"
+authors = [
+    {name = "itzreesa", email = "meow@reesa.cc"}
+]
+
+readme = "readme.md"
+license = "MIT"
+
+repository = "https://github.com/itzreesa/lyria"
+homepage = "https://github.com/itzreesa/lyria"
+
+requires-python = ">=3.10"
+
+dependencies = [
+    "mutagen (>=1.47.0,<2.0.0)",
+    "requests (>=2.32.5,<3.0.0)",
+    "pillow (>=12.1.1,<13.0.0)",
+    "tqdm (>=4.67.3,<5.0.0)",
+    "platformdirs (>=4.9.4,<5.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+lyria = "lyria:main"
