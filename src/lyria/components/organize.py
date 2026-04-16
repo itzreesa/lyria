@@ -59,7 +59,7 @@ class SongOrganizer():
       is_single = True
 
     disc_number = file_data.get("discnumber", None)
-    track_number = file_data.get("discnumber", None)
+    track_number = file_data.get("tracknumber", None)
 
     # second part
     new_path = Path(self.target)
