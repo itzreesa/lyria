@@ -21,7 +21,7 @@ class SongOrganizer():
     if not self.args.silent:
       count_total = self.count_moved + self.count_warn
       print("\n== stats")
-      print(f" ~ downloaded: {self.count_moved}")
+      print(f" ~ moved: {self.count_moved}")
       print(f" ~ warn: {self.count_warn}")
       print(f" ~~ total: {count_total}")
 
@@ -147,9 +147,14 @@ class SongOrganizer():
       if not self.args.dry_run:
         try:
           file.move(new_path)
+          self.count_moved += 1
         except Exception:
           print(traceback.format_exc())
           progress_print(self.args, 6, file)
+          self.count_warn += 1
+
+      else:
+        self.count_moved += 1
 
       if not self.args.silent:
         print(f" ~ {file} => {new_path}")
