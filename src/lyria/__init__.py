@@ -15,7 +15,7 @@ from lyria.util.config import LyriaConfig
 config = LyriaConfig()
 config.load_config()
 
-epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.cc> (https://github.com/itzreesa/lyria)"
+epilog=f"lyria {LYRIA_VERSION_FRIENDLY} by reesa <meow@reesa.dev> (https://github.com/itzreesa/lyria)"
 
 parser = argparse.ArgumentParser(
   prog="lyria",
