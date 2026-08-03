@@ -1,6 +1,6 @@
 [project]
 name = "lyria"
-version = "2.0.1"
+version = "2.0.2"
 description = "your music organizer"
 authors = [
     {name = "itzreesa", email = "meow@reesa.dev"}
